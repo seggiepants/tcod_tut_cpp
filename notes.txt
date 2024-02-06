@@ -1,0 +1,44 @@
+tutorial: https://www.roguebasin.com/index.php?title=Complete_roguelike_tutorial_using_C%2B%2B_and_libtcod_-_part_1:_setting_up
+getting started docs: https://libtcod.readthedocs.io/en/latest/guides/getting-started.html
+github: https://github.com/libtcod/libtcod
+
+suggests vcpkg and cmake.
+
+vcpkg: https://github.com/microsoft/vcpkg
+cmake: https://cmake.org/
+
+vcpkg: jump to getting started then unix
+
+# linux
+wants a sub-module so lets go back to the libtcod c++ tutorial and set that up.
+
+Oh look a template already setup, lets use that (https://github.com/HexDecimal/libtcod-vcpkg-template).
+git submodule update --init to grab vcpkg... takes a while to clone
+a very long time, lets update CMakeLists.txt while waiting
+
+changed the name and after failing a few times, the submodule init worked (had to login for some reason to a key chain thing)
+cmake CMakeList.txt and now it is upgrading cmake -- grumble.
+
+looks like it is now getting SDL2 (I thought I had that)
+looks like I can pass in a define for emscripten, so that sounds nice.
+https://github.com/HexDecimal/libtcod-vcpkg-template
+
+More dependencies
+sudo apt install libx11-dev libxft-dev libxext-dev
+sudo apt install libwayland-dev libxkbcommon-dev libegl1-mesa-dev
+sudo apt install libibus-1.0-dev
+
+slow but we got there in the end. Changed the window title kept the rest and I now have an executable that says 'Hello World'
+
+Now back to the tutorial, lets go back to the tutorial, and make the first program. A lot of stuff like include file already there from the template, plus a lot more the tutorial doesn't cover.
+first off init_root is deprecated, shouldn't be used and doesn't work with emscripten.
+looks like we are using SDL2 event handling instead of tcod. Will probably stay with that.
+Can't use TCODConsole::isWindowClosed() use SDL2 it says.
+Looks like we have a global console object instead of calling library function commands
+g_context.present(g_console); instead of TCODConsole::flush(); with a global context and console.
+we have print but no put_char lets try at. Have to add .ch at the end to get to the char, but it works and eventually 
+I finish part 1: setting up. I also added [ESCAPE] to quit and you can use cursors or wasd to move. 
+
+Did some looking not really seeing the map generation stuff I wanted, at least not in the readthedocs.io main sidebar. I do see a bsp.hpp file in the full api list of files.
+
+

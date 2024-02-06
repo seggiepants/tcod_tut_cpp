@@ -12,6 +12,15 @@
 #pragma warning(disable : 4297)  // Allow "throw" in main().  Letting the compiler handle termination.
 #endif
 
+struct Player 
+{
+  int x;
+  int y;
+  char ch;
+};
+
+struct Player g_player;
+
 /// Return the data directory.
 auto get_data_dir() -> std::filesystem::path {
   static auto root_directory = std::filesystem::path{"."};  // Begin at the working directory.
@@ -29,12 +38,14 @@ static constexpr auto WHITE = tcod::ColorRGB{255, 255, 255};
 
 static tcod::Console g_console;  // The global console object.
 static tcod::Context g_context;  // The global libtcod context.
+bool running = true;
 
 /// Game loop.
 void main_loop() {
   // Rendering.
   g_console.clear();
   tcod::print(g_console, {0, 0}, "Hello World", WHITE, std::nullopt);
+  g_console.at(g_player.x, g_player.y).ch = g_player.ch;
   g_context.present(g_console);
 
   // Handle input.
@@ -46,7 +57,35 @@ void main_loop() {
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
       case SDL_QUIT:
-        std::exit(EXIT_SUCCESS);
+        //std::exit(EXIT_SUCCESS);
+        running = false;
+        break;
+      case SDL_KEYDOWN:
+        switch(event.key.keysym.sym)
+        {
+        case SDLK_ESCAPE:
+          running = false;
+          break;
+        case SDLK_UP:
+        case SDLK_w:
+          g_player.y--;
+          break;
+        case SDLK_DOWN:
+        case SDLK_s:
+          g_player.y++;
+          break;
+        case SDLK_LEFT:
+        case SDLK_a:
+          g_player.x--;
+          break;
+        case SDLK_RIGHT:
+        case SDLK_d:
+          g_player.x++;
+          break;
+        }
+        // Bound to screen space.
+        g_player.x = std::max(0, std::min(g_console.get_width() - 1, g_player.x));
+        g_player.y = std::max(0, std::min(g_console.get_height() - 1, g_player.y));
         break;
     }
   }
@@ -62,7 +101,7 @@ int main(int argc, char** argv) {
     params.renderer_type = TCOD_RENDERER_SDL2;
     params.vsync = 1;
     params.sdl_window_flags = SDL_WINDOW_RESIZABLE;
-    params.window_title = "Libtcod Template Project";
+    params.window_title = "Libtcod C++ Tutorial";
 
     auto tileset = tcod::load_tilesheet(get_data_dir() / "dejavu16x16_gs_tc.png", {32, 8}, tcod::CHARMAP_TCOD);
     params.tileset = tileset.get();
@@ -72,10 +111,17 @@ int main(int argc, char** argv) {
 
     g_context = tcod::Context(params);
 
+    g_player.x = g_console.get_width() / 2;
+    g_player.y = g_console.get_height() / 2;
+    g_player.ch = '@';
+
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(main_loop, 0, 0);
 #else
-    while (true) main_loop();
+    while (running) 
+    {
+      main_loop();
+    }
 #endif
   } catch (const std::exception& exc) {
     std::cerr << exc.what() << "\n";
