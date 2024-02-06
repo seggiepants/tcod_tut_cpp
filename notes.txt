@@ -41,4 +41,23 @@ I finish part 1: setting up. I also added [ESCAPE] to quit and you can use curso
 
 Did some looking not really seeing the map generation stuff I wanted, at least not in the readthedocs.io main sidebar. I do see a bsp.hpp file in the full api list of files.
 
+Man alive it was painful trying to get github let me push to it. SSH vs HTTPS and a new SSH key. Misery all around.
 
+-- 06 FEB 2024
+-- Part 2 Map and Actors
+
+Oh look I found a newer version of the tutorial this should solve everything right?
+https://www.roguebasin.com/index.php?title=Complete_roguelike_tutorial_using_modern_C%2B%2B_and_libtcod
+Nope, abandonded after one paragraph. Ok continue with the old one then.
+
+lets start putting things on branches in git. I swear I used to do this a better way.
+git branch 02_Map_and_Actors
+git switch 02_Map_and_Actors
+
+I also found a site with the python version of the tutorials (http://www.rogueliketutorials.com/) may want to check against it later to see if I am missing stuff.
+
+I prefer .h or .hpp, but I will stick with the tutorial and use .hpp for this project
+
+Needed to hack up the old main and bring over the template initialization due to deprecation. Quite a bit more code than before. Puzzled over if I should pass in argc, argv or the whole parameter block. Decided the parameters belonged more in the engine and passed in the arguments. Moved get data dir into engine too and added a isRunning flag. Compiled and .... TCODList is deprecated. Let me go swap it for a generic stl list groan.
+
+ok, works as desired. Decided to take a screen shot for the readme. Speaking of which I should update that.
