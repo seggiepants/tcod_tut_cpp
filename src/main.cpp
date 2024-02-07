@@ -9,25 +9,24 @@
 #pragma warning(disable : 4297)  // Allow "throw" in main().  Letting the compiler handle termination.
 #endif
 
-Engine* engine;
+Engine engine;
 
 /// Game loop.
 void main_loop() {
   // Rendering.
-  engine->update();
-  engine->render();
+  engine.update();
+  engine.render();
 }
 
 /// Main program entry point.
-int main(int argc, char** argv) {
-    engine = new Engine(argc, argv);  
+int main(/* int argc, char** argv */) {
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(main_loop, 0, 0);
 #else
-    while (engine->isRunning()) 
+    while (engine.isRunning()) 
     {
       main_loop();
     }
 #endif
-  delete engine;
+  return 0;
 }

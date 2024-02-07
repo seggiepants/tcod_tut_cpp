@@ -11,12 +11,12 @@ TCOD_ColorRGBA RED = {255, 0, 0, 255};
 TCOD_ColorRGBA WHITE = {255, 255, 255, 255};
 TCOD_ColorRGBA YELLOW = {255, 255, 0, 255};
 
-Engine::Engine(int argc, char** argv) {
+Engine::Engine() {
     try {
     auto params = TCOD_ContextParams{};
     params.tcod_version = TCOD_COMPILEDVERSION;
-    params.argc = argc;
-    params.argv = argv;
+    //params.argc = argc;
+    //params.argv = argv;
     params.renderer_type = TCOD_RENDERER_SDL2;
     params.vsync = 1;
     params.sdl_window_flags = SDL_WINDOW_RESIZABLE;
@@ -31,7 +31,6 @@ Engine::Engine(int argc, char** argv) {
     context = tcod::Context(params);    
     player = new Actor(console.get_width() / 2, console.get_height() / 2, '@', WHITE);
     actors.push_back(player);
-    actors.push_back(new Actor(60, 13, '@', YELLOW));
     map = new Map(console.get_width(), console.get_height());
 
     running = true;
@@ -83,6 +82,40 @@ void Engine::update() {
         case SDLK_d:
             tryMove(player, player->x + 1, player->y);
             break;
+        case SDLK_F10:
+#ifndef __EMSCRIPTEN__
+            std::stringstream stream;
+            bool newFile = false;
+            int counter = 0;
+            while (!newFile)
+            {
+                counter++;
+                std::filesystem::path folder = GetDataDir();
+                stream.clear();
+                stream << "ScreenShot";
+                stream << std::setfill('0') << std::setw(3) << counter;
+                stream << ".bmp";
+                folder.append("..");
+                folder.append(stream.str());
+                newFile = !std::filesystem::exists(folder.c_str());
+                if (newFile)
+                {
+                    std::cerr << folder.c_str() << std::endl;
+                    try
+                    {
+                        
+                        //context.save_screenshot(folder);
+                        ScreenShot(folder.c_str());                        
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cerr << e.what() << '\n';
+                    }
+                    
+                }
+            }
+#endif
+            break;
         }
         break;
     }
@@ -108,6 +141,19 @@ void Engine::tryMove(Actor* actor, int x, int y) {
     actor->x = x;
     actor->y = y;
 }
+
+#ifndef __EMSCRIPTEN__
+void Engine::ScreenShot(const char* fileName)
+{
+    int w, h;
+    SDL_GetRendererOutputSize(context.get_sdl_renderer(), &w, &h);
+    SDL_Surface *sshot = SDL_CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+    SDL_RenderReadPixels(context.get_sdl_renderer(), NULL, SDL_PIXELFORMAT_ARGB8888, sshot->pixels, sshot->pitch);
+    SDL_SaveBMP(sshot, fileName);
+    SDL_FreeSurface(sshot);
+}
+#endif
+
 
 /// Return the data directory.
 std::filesystem::path Engine::GetDataDir() {
