@@ -20,7 +20,7 @@ class Engine {
     bool isRunning() { return running; }
     void tryMove(Actor* actor, int x, int y);
     protected:
-#ifndef __EMSCRIPTEN__    
+#if !defined(__EMSCRIPTEN__) && !defined(_WIN32)
     void ScreenShot(const char* fileName);
 #endif
     std::filesystem::path GetDataDir();

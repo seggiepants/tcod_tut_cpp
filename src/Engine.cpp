@@ -83,7 +83,7 @@ void Engine::update() {
             tryMove(player, player->x + 1, player->y);
             break;
         case SDLK_F10:
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(_WIN32)
             std::stringstream stream;
             bool newFile = false;
             int counter = 0;
@@ -139,7 +139,7 @@ void Engine::tryMove(Actor* actor, int x, int y) {
     actor->y = y;
 }
 
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(_WIN32)
 void Engine::ScreenShot(const char* fileName)
 {
     int w, h;
