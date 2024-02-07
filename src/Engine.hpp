@@ -8,25 +8,26 @@
 #include "Map.hpp"
 
 class Engine {
-    public:
-    std::list<Actor *> actors;
-    Actor* player;
-    Map* map;
-
+public:
     Engine();
     ~Engine();
+    void init(int argc, char** argv);
     void update();
     void render();
     bool isRunning() { return running; }
     void tryMove(Actor* actor, int x, int y);
-    protected:
-#if !defined(__EMSCRIPTEN__) && !defined(_WIN32)
-    void ScreenShot(const char* fileName);
-#endif
+
+    std::list<Actor *> actors;
+    Actor* player;
+    Map* map;
+    int fovRadius;
+protected:
     std::filesystem::path GetDataDir();
     tcod::Console console;
     tcod::Context context;
     bool running;
+    bool initialized;
+    bool computeFov;
 };
 extern TCOD_ColorRGBA BLACK;
 extern TCOD_ColorRGBA BLUE;
