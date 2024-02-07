@@ -61,3 +61,30 @@ I prefer .h or .hpp, but I will stick with the tutorial and use .hpp for this pr
 Needed to hack up the old main and bring over the template initialization due to deprecation. Quite a bit more code than before. Puzzled over if I should pass in argc, argv or the whole parameter block. Decided the parameters belonged more in the engine and passed in the arguments. Moved get data dir into engine too and added a isRunning flag. Compiled and .... TCODList is deprecated. Let me go swap it for a generic stl list groan.
 
 ok, works as desired. Decided to take a screen shot for the readme. Speaking of which I should update that.
+
+-- Part 03 Dungeon Building 
+I decided I didn't want to use screen grabbers for the next screen shot. Found a nice screenshot function in the library coded up something to save a screenshot with increasing counter when you hit F10. Compile... and .... depreacated :(
+I found TCOD_context_save_screenshot, but it uses the wrong context.
+
+OK, does the context I am using have a screenshot function? Yes and it takes a std::filesystem::path too which I was using lets try that. Segmentation fault, core dumped() :(
+
+Learned you can do
+cmake -DCMAKE_BUILD_TYPE=Debug CMakeLists.txt
+cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+
+changed to debug attached with gdb and it is in code that isn't mine :(
+
+Thread 1 "tcod_tut_cpp" received signal SIGSEGV, Segmentation fault.
+0x000055555586c182 in getPixelColorRGBA8 (r=0x7fffffffd638 "", g=0x7fffffffd63a "", b=0x7fffffffd63c "", a=0x7fffffffd63e "", in=0x0, i=0, mode=0x7fffffffde98) at /home/sgray/Documents/code/tcod_tut_cpp/vcpkg/buildtrees/lodepng/src/dcd7a6a84a-1b95b8ca64.clean/lodepng.c:3311
+
+nope changing to .bmp from .png does nothing, dies same place doesn't detect file type or anything.
+Stole some screenshot SDL2 code from Stack Overflow, that works but only saves as .BMP.  Without SDL_Image I think that is the best I can do. Anyway table this for now. Well one more thing, make sure it is not enabled in emscripten mode.
+
+Trying to keep things clean so when I got an unused parameter warning, for the userdata in the bspListener I found out you can prepend __attribute__((unused)) to it to silence the error. Learn something new every day. Other than my foray into trying to get a better screenshot system. This went pretty smooth, and mostly as-is. I think there is a TCOD_Random vs TCODRandom error in the original text. I also used std::swap to try to be more modern c++ ish.
+
+Spoke too soon, another core dump, is it the swap? Not this time: engine->player->x = (x1 + x2) / 2; I did have to switch from engine. to engine->, maybe the intellisense led me the wrong way. No compiler agrees with intellisense. I thought maybe I had map before player and a null pointer but it looks ok. Gdb says engine is a null pointer. Pointer must not be valid until after the constructor returns. I can either switch it back to a non-pointer object and remove the argc, argv parameters or move map creation out of the constructor. I don't really like either, but I think I will go with the prior. Closer to the original code. Now I get unused argc, argv, guess I will remove them. Looks like I didn't return a value either, add that, maybe that was the windows build problem. Almost working, I just don't have corridors. Is it the swap? Nope. It was digging doing a < instead of a <=.
+
+By the way first split recursive in the tutorial is passing max when it should be min. Also rooms are reaching the screen edges when it shouldn't be. Core dump on exit that is not good. Got it once in gdb not in my thread can no longer reproduce :(
+
+I think I got the bounds fixed. Passing in the room min size is too small when iterating min room size is where the bsp splitting stops but is also used to set the lower bound of the room when visiting. You can't have both the min size and a border. So I added two to the min room size for the splitting and use the normal min room size for the create room lower bound. Could get out of bounds numbers otherwise. The max swapped version in the tutorial wouldn't have the problem since it stopped much earlier.
+

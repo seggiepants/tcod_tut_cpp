@@ -5,7 +5,7 @@
 
 struct Tile {
     bool canWalk; // can we walk thorugh this tile?
-    Tile() : canWalk(true) {}
+    Tile() : canWalk(false) {}
 };
 
 class Map {
@@ -18,6 +18,10 @@ class Map {
         void render(tcod::Console&) const;
     protected:
         Tile* tiles;
+        friend class BspListener;
+
+        void dig(int x1, int y1, int x2, int y2);
+        void createRoom(bool first, int x1, int y1, int x2, int y2);
         void setWall(int x, int y);        
 };
 

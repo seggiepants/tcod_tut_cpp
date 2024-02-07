@@ -13,13 +13,16 @@ class Engine {
     Actor* player;
     Map* map;
 
-    Engine(int argc, char** argv);
+    Engine();
     ~Engine();
     void update();
     void render();
     bool isRunning() { return running; }
     void tryMove(Actor* actor, int x, int y);
     protected:
+#if !defined(__EMSCRIPTEN__) && !defined(_WIN32)
+    void ScreenShot(const char* fileName);
+#endif
     std::filesystem::path GetDataDir();
     tcod::Console console;
     tcod::Context context;
@@ -33,6 +36,6 @@ extern TCOD_ColorRGBA MAGENTA;
 extern TCOD_ColorRGBA RED;
 extern TCOD_ColorRGBA WHITE;
 extern TCOD_ColorRGBA YELLOW;
-extern Engine* engine;
+extern Engine engine;
 
 #endif

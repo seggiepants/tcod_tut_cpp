@@ -9,7 +9,7 @@ I am a vcpkg and CMake novice so I found a nice template at [https://github.com/
 
 I added a notes log to document frustrations/changes along the way. I also added a Screenshots folder so you can see how it looks as I go through the tutorial. The current version looks like this:
 
-![Part 02](screenshots/part_02_map_and_actors.png)
+![Part 03](screenshots/Part_03_Dungeon_Building.png)
 
 
 ## Dependencies
