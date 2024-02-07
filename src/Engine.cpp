@@ -11,7 +11,7 @@ TCOD_ColorRGBA RED = {255, 0, 0, 255};
 TCOD_ColorRGBA WHITE = {255, 255, 255, 255};
 TCOD_ColorRGBA YELLOW = {255, 255, 0, 255};
 
-Engine::Engine() : fovRadius(10), computeFov(false){
+Engine::Engine() : gameStatus(STARTUP), fovRadius(10) {
     initialized = false;
 }
 
@@ -44,12 +44,11 @@ void Engine::init(int argc, char** argv) {
         params.console = console.get();
 
         context = tcod::Context(params);    
-        player = new Actor(console.get_width() / 2, console.get_height() / 2, '@', WHITE);
+        player = new Actor(console.get_width() / 2, console.get_height() / 2, '@', "Player", WHITE);
         actors.push_back(player);
         map = new Map(console.get_width(), console.get_height());
-
         initialized = true;
-        computeFov = true;
+        gameStatus = STARTUP;
         running = true;
     } catch (const std::exception& exc) {
         std::cerr << exc.what() << "\n";
@@ -60,6 +59,15 @@ void Engine::init(int argc, char** argv) {
 void Engine::update() {
     // Handle input.
     SDL_Event event;
+    int dx = 0, dy = 0;
+
+    if (gameStatus == STARTUP) {
+        // Compute FOV on first frame.
+        map->computeFov();
+        // Then set to IDLE.
+        gameStatus = IDLE;
+    }
+
 #ifndef __EMSCRIPTEN__
     // Block until events exist.  This conserves resources well but isn't compatible with animations or Emscripten.
     SDL_WaitEvent(nullptr);
@@ -77,26 +85,29 @@ void Engine::update() {
             break;
         case SDLK_UP:
         case SDLK_w:
-            tryMove(player, player->x, player->y - 1);
+            dy = -1;
             break;
         case SDLK_DOWN:
         case SDLK_s:
-            tryMove(player, player->x, player->y + 1);
+            dy = 1;
             break;
         case SDLK_LEFT:
         case SDLK_a:
-            tryMove(player, player->x - 1, player->y);
+            dx = -1;
             break;
         case SDLK_RIGHT:
         case SDLK_d:
-            tryMove(player, player->x + 1, player->y);
+            dx = 1;
             break;
         }
         break;
     }
-    if (computeFov) {
-        map->computeFov();
-        computeFov = false;
+
+    if (dx!= 0 || dy != 0) {
+        gameStatus = NEW_TURN;
+        if (player->moveOrAttack(player->x + dx, player->y + dy )) {
+            map->computeFov();
+        }
     }
   }
 }
@@ -110,18 +121,6 @@ void Engine::render() {
         }
     }
     context.present(console);
-}
-
-void Engine::tryMove(Actor* actor, int x, int y) {
-    if (x < 0 || x >= map->width || y < 0 || y >= map->height)
-        return;
-
-    if (map->isWall(x, y))
-        return;
-    
-    actor->x = x;
-    actor->y = y;
-    computeFov = true;
 }
 
 /// Return the data directory.

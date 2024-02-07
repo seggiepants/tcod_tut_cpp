@@ -18,6 +18,13 @@ public:
     void tryMove(Actor* actor, int x, int y);
 
     std::list<Actor *> actors;
+    enum GameStatus {
+        STARTUP,
+        IDLE,
+        NEW_TURN,
+        VICTORY,
+        DEFEAT
+    } gameStatus;
     Actor* player;
     Map* map;
     int fovRadius;
@@ -27,7 +34,6 @@ protected:
     tcod::Context context;
     bool running;
     bool initialized;
-    bool computeFov;
 };
 extern TCOD_ColorRGBA BLACK;
 extern TCOD_ColorRGBA BLUE;
