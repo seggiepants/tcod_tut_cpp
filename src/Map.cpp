@@ -1,7 +1,8 @@
 #include "Map.hpp"
 #include "Engine.hpp"
 
-static const int ROOM_MAX_SIZE = 12;
+// Max size not used yet.
+// static const int ROOM_MAX_SIZE = 12;
 static const int ROOM_MIN_SIZE = 6;
 
 class BspListener : public ITCODBspCallback { 
@@ -14,7 +15,13 @@ class BspListener : public ITCODBspCallback {
     bool visitNode(TCODBsp* node, void* userData);
 };
 
-bool BspListener::visitNode(TCODBsp* node, __attribute__((unused)) void* userData) {
+#ifdef _WIN32
+#define UNUSED
+#else
+#define UNUSED __attribute__((unused))
+#endif
+
+bool BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
     if (node->isLeaf()) {
         int x, y, w, h;
 
@@ -24,16 +31,16 @@ bool BspListener::visitNode(TCODBsp* node, __attribute__((unused)) void* userDat
         h = rng->getInt(ROOM_MIN_SIZE, node->h - 2);
         x = rng->getInt(node->x + 1, node->x + node->w -  w - 1);
         y = rng->getInt(node->y + 1, node->y + node->h -  h - 1);
-        map.createRoom(roomNum == 0, x, y, x + w - 1, y + h - 1);
+        map.createRoom(this->roomNum == 0, x, y, x + w - 1, y + h - 1);
 
         if (roomNum != 0) {
             // dig a corridor from the last room
-            map.dig(lastX, lastY, x + (w / 2), lastY);
-            map.dig(x + (w / 2), lastY, x + (w / 2), y + (h / 2));            
+            map.dig(this->lastX, this->lastY, x + (w / 2), this->lastY);
+            map.dig(x + (w / 2), this->lastY, x + (w / 2), y + (h / 2));            
         }
-        lastX = x + (w / 2);
-        lastY = y + (h / 2);
-        roomNum++;
+        this->lastX = x + (w / 2);
+        this->lastY = y + (h / 2);
+        this->roomNum++;
     }    
     return true;
 }

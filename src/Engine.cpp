@@ -92,20 +92,17 @@ void Engine::update() {
                 counter++;
                 std::filesystem::path folder = GetDataDir();
                 stream.clear();
-                stream << "ScreenShot";
-                stream << std::setfill('0') << std::setw(3) << counter;
-                stream << ".bmp";
+                stream << "ScreenShot" << std::setfill('0') << std::setw(3) << counter << ".bmp";
                 folder.append("..");
                 folder.append(stream.str());
                 newFile = !std::filesystem::exists(folder.c_str());
                 if (newFile)
                 {
-                    std::cerr << folder.c_str() << std::endl;
                     try
                     {
                         
                         //context.save_screenshot(folder);
-                        ScreenShot(folder.c_str());                        
+                        ScreenShot(reinterpret_cast<const char*>(folder.c_str()));
                     }
                     catch(const std::exception& e)
                     {
