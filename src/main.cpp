@@ -19,7 +19,8 @@ void main_loop() {
 }
 
 /// Main program entry point.
-int main(/* int argc, char** argv */) {
+int main(int argc, char** argv) {
+  engine.init(argc, argv);
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(main_loop, 0, 0);
 #else

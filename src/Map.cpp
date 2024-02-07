@@ -47,6 +47,7 @@ bool BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
 
 Map::Map(int width, int height) : width(width), height(height) {
     tiles = new Tile[width * height];
+    map = new TCODMap(width, height);
     TCODBsp bsp(0, 0, width, height);
     bsp.splitRecursive(NULL, 8, ROOM_MIN_SIZE + 2, ROOM_MIN_SIZE + 2, 1.5f, 1.5f);
     BspListener listener(*this);
@@ -55,27 +56,54 @@ Map::Map(int width, int height) : width(width), height(height) {
 
 Map::~Map() {
     delete[] tiles;
-    tiles = nullptr;
+    delete map;
 }
 
 bool Map::isWall(int x, int y) const {
-    return !tiles[x + (y * width)].canWalk;
+    return !map->isWalkable(x, y);
+}
+
+bool Map::isExplored(int x, int y) const {
+    return tiles[x + (y * width)].explored;
+}
+
+bool Map::isInFov(int x, int y) const {
+    if (map->isInFov(x, y)) {
+        tiles[x + (y * width)].explored = true;
+        return true;
+    }
+    return false;
+}
+
+void Map::computeFov() {
+    map->computeFov(engine.player->x, engine.player->y, engine.fovRadius);
 }
 
 void Map::setWall(int x, int y) {
-    tiles[x + (y * width)].canWalk = false;
+    map->setProperties(x, y, true, false);    
 }
 
 void Map::render(tcod::Console & console) const {
+    static const TCOD_ColorRGBA unexplored {0, 0, 0, 255};
     static const TCOD_ColorRGBA darkWall {0, 0, 100, 255};
     static const TCOD_ColorRGBA darkGround {50, 50, 150, 255};    
+    static const TCOD_ColorRGBA lightWall {130, 110, 50, 255 };
+    static const TCOD_ColorRGBA lightGround {200, 180, 50, 255 };
 
 
     for(int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             TCOD_ConsoleTile& tile = console.at(x, y);
             tile.ch = ' ';
-            tile.bg = isWall(x, y) ? darkWall : darkGround;
+            if (isInFov(x, y)) {
+                tile.bg = isWall(x, y) ? lightWall : lightGround;
+            } else if (isExplored(x, y)) {
+                tile.bg = isWall(x, y) ? darkWall : darkGround;
+            }
+            else
+            {
+                tile.bg = unexplored;
+            }
         }
     }
 }
@@ -90,7 +118,7 @@ void Map::dig(int x1, int y1, int x2, int y2) {
 
     for (int y = y1; y <= y2; ++y) {
         for (int x = x1; x <= x2; ++x) {
-            tiles[x + (y * width)].canWalk = true;
+            map->setProperties(x, y, true, true);
         }
     }
 }

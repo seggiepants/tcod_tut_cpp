@@ -88,3 +88,11 @@ By the way first split recursive in the tutorial is passing max when it should b
 
 I think I got the bounds fixed. Passing in the room min size is too small when iterating min room size is where the bsp splitting stops but is also used to set the lower bound of the room when visiting. You can't have both the min size and a border. So I added two to the min room size for the splitting and use the normal min room size for the create room lower bound. Could get out of bounds numbers otherwise. The max swapped version in the tutorial wouldn't have the problem since it stopped much earlier.
 
+-- 07 FEB 2024
+-- Part 04 Field of View
+
+I changed my mind. I decided to move the engine initialization to a separate method, brought back argc,argv and passed them in. Hoping that fixes the SDLmain problem on Windows. Maybe, maybe not but at least the signature of main might match expectations better. Also I just removed the ScreenShot function altogether, it was causing build problems and wasn't really good.
+
+My tryMove function just saved me from setting computeFov = true four times, huzzah! It also only does it if you actually move. I moved computFov = true from the Engine constructor to the init call. I don't want to compute it until we have a map to use. I think my code for setting the tile background color after grabbing the tile reference first is nicer too. I also don't like if/else trees that don't do all the cases so I plot a black square if not explored.
+
+
