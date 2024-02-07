@@ -23,10 +23,11 @@ protected:
     Tile* tiles;
     TCODMap* map;
     friend class BspListener;
-
+    void addMonster(int x, int y);
+    bool canWalk(int x, int y) const;
     void dig(int x1, int y1, int x2, int y2);
     void createRoom(bool first, int x1, int y1, int x2, int y2);
-    void setWall(int x, int y);        
+    void setWall(int x, int y);
 };
 
 #endif 

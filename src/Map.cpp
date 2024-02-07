@@ -2,8 +2,9 @@
 #include "Engine.hpp"
 
 // Max size not used yet.
-// static const int ROOM_MAX_SIZE = 12;
 static const int ROOM_MIN_SIZE = 6;
+static const int NODE_MIN_SIZE = ROOM_MIN_SIZE + 5; // Must be at least ROOM_MIN_SIZE + 2 to allow walls.
+static const int MAX_ROOM_MONSTERS = 3;
 
 class BspListener : public ITCODBspCallback { 
     private:
@@ -49,7 +50,7 @@ Map::Map(int width, int height) : width(width), height(height) {
     tiles = new Tile[width * height];
     map = new TCODMap(width, height);
     TCODBsp bsp(0, 0, width, height);
-    bsp.splitRecursive(NULL, 8, ROOM_MIN_SIZE + 2, ROOM_MIN_SIZE + 2, 1.5f, 1.5f);
+    bsp.splitRecursive(NULL, 8, NODE_MIN_SIZE, NODE_MIN_SIZE, 1.5f, 1.5f);
     BspListener listener(*this);
     bsp.traverseInvertedLevelOrder(&listener, NULL);
 }
@@ -108,6 +109,38 @@ void Map::render(tcod::Console & console) const {
     }
 }
 
+void Map::addMonster(int x, int y) {
+    static TCOD_ColorRGBA colorOrc = {63, 127, 63, 255};
+    static TCOD_ColorRGBA colorTroll = {0, 127, 0, 255};
+
+    TCODRandom* rng = TCODRandom::getInstance();
+
+    if (rng->getInt(0, 100) < 80) {
+        // Create an orc
+        engine.actors.push_back(new Actor(x, y, 'o', "Orc", colorOrc));
+    }
+    else 
+    {
+        // Create a troll
+        engine.actors.push_back(new Actor(x, y, 'T', "Troll", colorTroll));
+    }
+}
+
+bool Map::canWalk(int x, int y) const {
+    if (isWall(x, y)) {
+        // this is a wall
+        return false;
+    }
+
+    for(auto const & actor : engine.actors) {
+        if (actor->x == x && actor->y == y) {
+            // there is an actor there. cannot walk.
+            return false;
+        }
+    }
+    return true;
+}
+
 void Map::dig(int x1, int y1, int x2, int y2) {
     if (x2 < x1) { 
         std::swap(x1, x2);
@@ -130,8 +163,14 @@ void Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
         engine.player->y = (y1 + y2) / 2;        
     } else {
         TCODRandom* rng = TCODRandom::getInstance();
-        if (rng->getInt(0, 3) == 0) {
-            engine.actors.push_back(new Actor((x1 + x2) /2, (y1 + y2) / 2, '@', YELLOW));
+        int countMonsters = rng->getInt(0, MAX_ROOM_MONSTERS);
+        while (countMonsters > 0) {
+            int x = rng->getInt(x1, x2);
+            int y = rng->getInt(y1, y2);
+            if (canWalk(x, y)) {
+                addMonster(x, y);
+            }
+            countMonsters--;
         }
     }
 }

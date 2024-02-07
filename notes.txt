@@ -95,4 +95,16 @@ I changed my mind. I decided to move the engine initialization to a separate met
 
 My tryMove function just saved me from setting computeFov = true four times, huzzah! It also only does it if you actually move. I moved computFov = true from the Engine constructor to the init call. I don't want to compute it until we have a map to use. I think my code for setting the tile background color after grabbing the tile reference first is nicer too. I also don't like if/else trees that don't do all the cases so I plot a black square if not explored.
 
+-- Part 05 Preparing for Combat
+-- Tried getting emscripten to build, but it isn't working. I think my local emscripten setup is just bad. Will try again on another machine at some point.
+
+canWalk sounds like the tryMove function I already added. By the way in the previous branch I had to fix the setWall method I wonder if I was supposed to remove it when we added the dig method. Turns out tryMove will be replaced with moveOrAttack(); The change makes my computeFov engine flag no longer necessary too.
+
+I have been thinking all of the rooms are pretty much the same size. The max room size is probably really the min bsp node size. I am going to rename that and put it back in instead of just adding 2 to each. Actually I will make it the prior constant + difference. I guess that's better. I did make it + 5 or 11 instead of 12 just so it is a little less aligned to grid.
+
+TCODColor::desaturatedGreen and darkerGreen are deprecated. Against recommendations went with a std::string for the Actor name. I can now change it if desired. Don't like the fixed sized arrays for name.
+
+Pretty sure we need to reset the game status back to IDLE after running the actor update functions.
+
+I used std::string and it looks like MSVC hates that so lets see if the windows build fails now. Otherwise things look like they are working for this part of the tutorial.
 
