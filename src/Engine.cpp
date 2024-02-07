@@ -92,9 +92,9 @@ void Engine::update() {
                 counter++;
                 std::filesystem::path folder = GetDataDir();
                 stream.clear();
-                stream << "ScreenShot" << std::setfill('0') << std::setw(3) << counter << ".bmp";
-                folder.append("..");
-                folder.append(stream.str());
+                stream << (const char*)"ScreenShot" << std::setfill('0') << std::setw(3) << counter << (const char*)".bmp";
+                folder.append((const char*)"..");
+                folder.append((const char*)stream.str().c_str());
                 newFile = !std::filesystem::exists(folder.c_str());
                 if (newFile)
                 {
