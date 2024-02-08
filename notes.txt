@@ -108,3 +108,26 @@ Pretty sure we need to reset the game status back to IDLE after running the acto
 
 I used std::string and it looks like MSVC hates that so lets see if the windows build fails now. Otherwise things look like they are working for this part of the tutorial.
 
+-- 08 FEB 2024
+-- Part 06 Going Berserk!
+I like header guards so I am skipping the one header file to rule them all part. In fact I have been adding those since the beginning.
+
+It looks like I may have missed a bit in the code checking last time, not enough to cause a build error but it shouldn't have been working (but it was when I tested). Not sure but git marks it as a change. Maybe I did a successful error.
+
+Changed std::string to std::string* just seems more reliable. Added destructors to delete them too.
+
+Not so sure of the owner stuff on the Destructible classes it is confusing. It looks like we are attacked and then the owner dies? I broke the Monster and Player Destructible classes into their own files.
+
+On the Attacker::attack method I saved damage in a variable so we didn't compute it multiple times. For Destructible, Owner is going to be the one taking the damage not dishing it. The owner is the one who owns the Destructible object, should have probably changed that variable's name, seems like the destructible object should have a pointer to the actor it belongs to or you should go through the actor to use the destructible object and it passes in its this pointer. 
+
+This is a long one, I don't like things to be in a non-compilable state for so long with dangling references that haven't been defined yet. Would have preferred to stub them out first.
+
+Had to upgrad Map::canWalk from protected to public. I didn't think it needed to be public last part. Lots more public things than I would like normally if I am being honest.
+
+I misread the IDLE state last time. Should always start the engine update by setting status to idle. I think my extra fix last time was patching over that omission.
+
+Lots of build errors, that forward reference got me. I ended up putting class Actor; in the header and #include "Actor.hpp" in the cpp file to get rid of that. I accidentally left MonsterDestructible incomplete which caused cryptic linker errors too. Then when I try to play, I have 0/30 life and the player won't respond to input. Groan. Must have missed a line. A missing break messed up the keyboard handling, and a bad switch statement for the engine too. I never initialized HP was the 0/30 problem. Now I am noticing I am printing pointers instead of names for attack messages. Ok, working better now after adding ->c_str() to my std::string variables when printing (is that the correct way). 
+
+Now the orcs and trolls seem to run away when I try to attack or at least when I try to get close to them. Figured it out, the orc moving is only when you normalize the distance vector, I had it try to move whenever it could and attack if movement failed. Moved the chase stuff into the normalize condition and things seem to be working now.
+
+That was a long one, but it is an actual game at this point. There is a world, enemies, and you can lose. You can't really win, but close enough. 

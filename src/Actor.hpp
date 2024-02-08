@@ -4,17 +4,25 @@
 #include <libtcod.hpp>
 #include <string>
 
+#include "Attacker.hpp"
+#include "Destructible.hpp"
+#include "Ai.hpp"
+
 class Actor {
     public:
     int x, y; // position on the map
     int ch; // ascii code
-    std::string name;
+    std::string* name;
     TCOD_ColorRGBA col; // color    
+    bool blocks; // can we walk on this actor?
+    Attacker* attacker; // something that deals damage
+    Destructible* destructible; // something that can be damaged
+    Ai* ai; // something self-updating
 
     Actor(int x, int y, int ch, const char* name, const TCOD_ColorRGBA & col);
+    ~Actor();
     void render(tcod::Console& ) const;
     void update();
-    bool moveOrAttack(int x, int y);
 };
 
 #endif //__ACTOR_HPP__

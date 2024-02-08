@@ -1,6 +1,9 @@
 #include <iostream>
 #include <SDL.h>
 #include "Engine.hpp"
+#include "Attacker.hpp"
+#include "PlayerDestructible.hpp"
+#include "PlayerAi.hpp"
 
 TCOD_ColorRGBA BLACK = {0, 0, 0, 255};
 TCOD_ColorRGBA BLUE = {0, 0, 255, 255};
@@ -11,7 +14,7 @@ TCOD_ColorRGBA RED = {255, 0, 0, 255};
 TCOD_ColorRGBA WHITE = {255, 255, 255, 255};
 TCOD_ColorRGBA YELLOW = {255, 255, 0, 255};
 
-Engine::Engine() : gameStatus(STARTUP), fovRadius(10) {
+Engine::Engine() : gameStatus(STARTUP), fovRadius(10), currentKey((SDL_Keycode)0) {
     initialized = false;
 }
 
@@ -23,9 +26,12 @@ Engine::~Engine() {
     delete map;
 }
 
-void Engine::init(int argc, char** argv) {
+void Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
     if (initialized)
         return;
+
+    this->screenWidth = screenWidth;
+    this->screenHeight = screenHeight;
     
     try {
         auto params = TCOD_ContextParams{};
@@ -40,11 +46,14 @@ void Engine::init(int argc, char** argv) {
         auto tileset = tcod::load_tilesheet(GetDataDir() / "dejavu16x16_gs_tc.png", {32, 8}, tcod::CHARMAP_TCOD);
         params.tileset = tileset.get();
 
-        console = tcod::Console{80, 40};
+        console = tcod::Console{screenWidth, screenHeight};
         params.console = console.get();
 
         context = tcod::Context(params);    
-        player = new Actor(console.get_width() / 2, console.get_height() / 2, '@', "Player", WHITE);
+        player = new Actor(console.get_width() / 2, console.get_height() / 2, '@', "player", WHITE);
+        player->destructible = new PlayerDestructible(30, 2, "your cadaver");
+        player->attacker = new Attacker(5);
+        player->ai = new PlayerAi();
         actors.push_back(player);
         map = new Map(console.get_width(), console.get_height());
         initialized = true;
@@ -59,57 +68,45 @@ void Engine::init(int argc, char** argv) {
 void Engine::update() {
     // Handle input.
     SDL_Event event;
-    int dx = 0, dy = 0;
+    currentKey = (SDL_Keycode)0; // Clear each time  only new keys stay
 
     if (gameStatus == STARTUP) {
         // Compute FOV on first frame.
         map->computeFov();
-        // Then set to IDLE.
-        gameStatus = IDLE;
     }
+    gameStatus = IDLE;
 
 #ifndef __EMSCRIPTEN__
     // Block until events exist.  This conserves resources well but isn't compatible with animations or Emscripten.
     SDL_WaitEvent(nullptr);
 #endif
     while (SDL_PollEvent(&event)) {
-    switch (event.type) {
-    case SDL_QUIT:
-        //std::exit(EXIT_SUCCESS);
-        running = false;
-        break;
-    case SDL_KEYDOWN:
-        switch(event.key.keysym.sym) {
-        case SDLK_ESCAPE:
+        switch (event.type) {
+        case SDL_QUIT:
+            //std::exit(EXIT_SUCCESS);
             running = false;
             break;
-        case SDLK_UP:
-        case SDLK_w:
-            dy = -1;
-            break;
-        case SDLK_DOWN:
-        case SDLK_s:
-            dy = 1;
-            break;
-        case SDLK_LEFT:
-        case SDLK_a:
-            dx = -1;
-            break;
-        case SDLK_RIGHT:
-        case SDLK_d:
-            dx = 1;
+        case SDL_KEYDOWN:
+            switch(event.key.keysym.sym) {
+            case SDLK_ESCAPE:
+                running = false;
+                break;
+            default:
+                currentKey = event.key.keysym.sym;
+                break;
+            }
             break;
         }
-        break;
     }
 
-    if (dx!= 0 || dy != 0) {
-        gameStatus = NEW_TURN;
-        if (player->moveOrAttack(player->x + dx, player->y + dy )) {
-            map->computeFov();
+    player->update();
+    if (gameStatus == NEW_TURN) {
+        for(auto const & actor : actors) {
+            if (actor != player) {
+                actor->update();
+            }
         }
     }
-  }
 }
 
 void Engine::render() {
@@ -120,7 +117,17 @@ void Engine::render() {
             actor->render(console);
         }
     }
+
+    // start of a gui
+    if (player->destructible) {
+        TCOD_console_printf(console.get(), 1, console.get_height() - 2, "HP: %d/%d",(int)player->destructible->hp, (int)player->destructible->maxHp);
+    }
     context.present(console);
+}
+
+void Engine::sendToBack(Actor* actor) {
+    actors.remove(actor);
+    actors.push_front(actor);
 }
 
 /// Return the data directory.
