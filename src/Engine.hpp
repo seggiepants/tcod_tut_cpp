@@ -3,6 +3,7 @@
 
 #include <list>
 #include <filesystem>
+#include <SDL.h>
 #include <libtcod.hpp>
 #include "Actor.hpp"
 #include "Map.hpp"
@@ -11,11 +12,11 @@ class Engine {
 public:
     Engine();
     ~Engine();
-    void init(int argc, char** argv);
+    void init(int argc, char** argv, int screenWidth, int screenHeight);
     void update();
     void render();
     bool isRunning() { return running; }
-    void tryMove(Actor* actor, int x, int y);
+    void sendToBack(Actor* actor);
 
     std::list<Actor *> actors;
     enum GameStatus {
@@ -28,12 +29,15 @@ public:
     Actor* player;
     Map* map;
     int fovRadius;
+    SDL_Keycode currentKey;
 protected:
     std::filesystem::path GetDataDir();
     tcod::Console console;
     tcod::Context context;
     bool running;
     bool initialized;
+    int screenWidth;
+    int screenHeight;
 };
 extern TCOD_ColorRGBA BLACK;
 extern TCOD_ColorRGBA BLUE;

@@ -1,5 +1,8 @@
 #include "Map.hpp"
 #include "Engine.hpp"
+#include "Attacker.hpp"
+#include "MonsterAi.hpp"
+#include "MonsterDestructible.hpp"
 
 // Max size not used yet.
 static const int ROOM_MIN_SIZE = 6;
@@ -117,12 +120,20 @@ void Map::addMonster(int x, int y) {
 
     if (rng->getInt(0, 100) < 80) {
         // Create an orc
-        engine.actors.push_back(new Actor(x, y, 'o', "Orc", colorOrc));
+        Actor* orc = new Actor(x, y, 'o', "Orc", colorOrc);
+        orc->destructible = new MonsterDestructible(10, 0, "dead orc");
+        orc->attacker = new Attacker(3);
+        orc->ai = new MonsterAi();
+        engine.actors.push_back(orc);
     }
     else 
     {
         // Create a troll
-        engine.actors.push_back(new Actor(x, y, 'T', "Troll", colorTroll));
+        Actor* troll = new Actor(x, y, 'T', "Troll", colorTroll);
+        troll->destructible = new MonsterDestructible(16, 1, "troll carcass");
+        troll->attacker = new Attacker(4);
+        troll->ai = new MonsterAi();
+        engine.actors.push_back(troll);
     }
 }
 
@@ -133,8 +144,8 @@ bool Map::canWalk(int x, int y) const {
     }
 
     for(auto const & actor : engine.actors) {
-        if (actor->x == x && actor->y == y) {
-            // there is an actor there. cannot walk.
+        if (actor->blocks && actor->x == x && actor->y == y) {
+            // there is a blocking actor here. cannot walk.
             return false;
         }
     }
