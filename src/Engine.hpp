@@ -6,6 +6,7 @@
 #include <SDL.h>
 #include <libtcod.hpp>
 #include "Actor.hpp"
+#include "Gui.hpp"
 #include "Map.hpp"
 
 class Engine {
@@ -28,8 +29,14 @@ public:
     } gameStatus;
     Actor* player;
     Map* map;
+    Gui* gui;
     int fovRadius;
     SDL_Keycode currentKey;
+    int get_width() { return screenWidth; }
+    int get_height() { return screenHeight; }
+    bool mouseClicked;
+    int mouseX; // mouse position in tiles/characters
+    int mouseY;
 protected:
     std::filesystem::path GetDataDir();
     tcod::Console console;
@@ -38,6 +45,8 @@ protected:
     bool initialized;
     int screenWidth;
     int screenHeight;
+    int tileWidth;
+    int tileHeight;
 };
 extern TCOD_ColorRGBA BLACK;
 extern TCOD_ColorRGBA BLUE;
@@ -47,6 +56,21 @@ extern TCOD_ColorRGBA MAGENTA;
 extern TCOD_ColorRGBA RED;
 extern TCOD_ColorRGBA WHITE;
 extern TCOD_ColorRGBA YELLOW;
+extern TCOD_ColorRGBA COLOR_CORPSE;
+extern TCOD_ColorRGBA COLOR_ORC;
+extern TCOD_ColorRGBA COLOR_TROLL;
+extern TCOD_ColorRGBA DARK_GROUND;
+extern TCOD_ColorRGBA DARK_WALL;
+extern TCOD_ColorRGBA LIGHT_GROUND;
+extern TCOD_ColorRGBA LIGHT_WALL;
+extern TCOD_ColorRGBA UNEXPLORED;
+
+extern TCOD_ColorRGB black;
+extern TCOD_ColorRGB darkerRed;
+extern TCOD_ColorRGB lightGrey;
+extern TCOD_ColorRGB lightRed;
+extern TCOD_ColorRGB red;
+extern TCOD_ColorRGB white;
 extern Engine engine;
 
 #endif

@@ -1,7 +1,6 @@
 #include "PlayerAi.hpp"
 #include "Engine.hpp"
 #include <SDL.h>
-#include <iostream> // again remove once we have in-game gui log screen.
 
 void PlayerAi::update(Actor* owner) {
     if (owner->destructible && owner->destructible->isDead()) {
@@ -59,7 +58,7 @@ bool PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
     // look for corpses
     for (auto const & actor : engine.actors) {
         if (actor->destructible && actor->destructible->isDead() && actor->x == targetX && actor->y == targetY) {
-            std::cout << "There's a " << actor->name->c_str() << " here" << std::endl;
+            engine.gui->message(lightGrey, "There's a %s here", actor->name->c_str());
             break;
         }
     }

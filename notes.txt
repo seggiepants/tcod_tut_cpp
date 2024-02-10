@@ -131,3 +131,34 @@ Lots of build errors, that forward reference got me. I ended up putting class Ac
 Now the orcs and trolls seem to run away when I try to attack or at least when I try to get close to them. Figured it out, the orc moving is only when you normalize the distance vector, I had it try to move whenever it could and attack if movement failed. Moved the chase stuff into the normalize condition and things seem to be working now.
 
 That was a long one, but it is an actual game at this point. There is a world, enemies, and you can lose. You can't really win, but close enough. 
+
+09 FEB 2024
+-- Part 07 The GUI
+This has been a bit of a slog, not even to the message log and lots of deprecation problems. 
+By the way can we make up our mind on RGB, vs RGBA I seem to have an mish-mash of both, and I want to stick to just one.
+
+I knew the console was coming but I needed to add get_height/get_width inline calls so I could tell how far to move things around without duplicating constants/magic numbers.
+
+TCOD_Console, well sounds like you really need tcod::Console which you can cast to a TCOD_Console. That's great except it doesn't seem to work if you have a tcod::Console* and want a TCOD_Console*. In fact it causes a segmentation fault. I had to make a temporary TCOD_Console variable from *con (the tcod::Console*) (passing *con was working for other calls) then take the address of that in the print call. Which can't be printEx, nope deprecated. Switch it to TCOD_console_print. Nope no good have to use TCOD_console_printf_ex. Arg. 
+
+Lets not forget setDefaultBackground is deprecated. In Gui::render I worked around it by calling clear with a tile with the desired background. Other calls needed to be deleted then pass the colors into the rectangle drawing call instead. Of course the rect command is also deprecated, use tcod::draw_rect which has a different parameter list.
+
+I am starting to think this is where any other people trying to get the tutorial to work stopped. That is a lot of deprecation and confusion for such a tiny bit of code. Anyway, I got it working onto the message log. By the way trying to catch a segmentation fault in gdb is annoying. Looks like I was back in release mode for unknown reasons.
+
+Looking through the code I found a commented out print line which had better syntax. use con->get() to get the console pointer. Oy I feel dumb. It is far less hack-ish at least.
+
+So I am getting tired once again with TCOD_ColorRGB vs TCOD_ColorRGBA which of course are both different than TCODColor in the tutorial. At the every end I finally decided to put all the color constants in one place. The RGB colors are lower case, and the RGBA colors are upper case. Tile need RGBA most other things need just RGB. Sometimes the Highlander is right, there can be only one! That stuff needs a cleanup.
+
+Outside of that the Messages required normal changes, TCODList is deprecated so a STL list it is. Instead of char* I also used STL strings (although you pass in const char* because I am dumb that way).
+
+Despite trying to keep things new C++ style, in the the message function I broke down and used c-isms like vsprintf and just a plain char array. Although once I got to the renderMouseLook function the char array caused a crash. I forgot to limit the message to just things at the mouse location and blew through the array. Whoops! Changing it to a std::string helped me find that problem.
+
+Speaking of MouseLook, I wanted to use the TCOD mouse stuff. First I looked up how to do it in SDL2. Then as I was about to call it good, I remembered something. That is pixel location versus character location. I didn't want to try to compute it so I tired the TCOD calls and was promptly told it was .... deprecated. So I computed it anyway, and had to cache the tile width and height in the engine to compute it. Seems to work... it also seems TCOD should have something for mouse to character location. Maybe they do and I just didn't see it.
+
+I should probably add in extra SDL2 libraries for sound effects and image handling at some point. Might help get that screenshot function working. 
+
+Why was such a small part soooo long?
+
+
+
+

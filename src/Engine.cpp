@@ -13,8 +13,25 @@ TCOD_ColorRGBA MAGENTA = {255, 0, 255, 255};
 TCOD_ColorRGBA RED = {255, 0, 0, 255};
 TCOD_ColorRGBA WHITE = {255, 255, 255, 255};
 TCOD_ColorRGBA YELLOW = {255, 255, 0, 255};
+TCOD_ColorRGBA COLOR_CORPSE = {191, 0, 0, 255};
+TCOD_ColorRGBA COLOR_ORC = {63, 127, 63, 255};
+TCOD_ColorRGBA COLOR_TROLL = {0, 127, 0, 255};
+TCOD_ColorRGBA DARK_GROUND = {50, 50, 150, 255};    
+TCOD_ColorRGBA DARK_WALL = {0, 0, 100, 255};
+TCOD_ColorRGBA LIGHT_GROUND = {200, 180, 50, 255 };
+TCOD_ColorRGBA LIGHT_WALL = {130, 110, 50, 255 };
+TCOD_ColorRGBA UNEXPLORED = {0, 0, 0, 255};
+
+TCOD_ColorRGB black = {0, 0, 0};
+TCOD_ColorRGB darkerRed = {127, 0, 0}; 
+TCOD_ColorRGB lightGrey = {159, 159, 159};
+TCOD_ColorRGB lightRed = {255, 63, 63}; 
+TCOD_ColorRGB red = {255, 0, 0};
+TCOD_ColorRGB white = {255, 255, 255};
 
 Engine::Engine() : gameStatus(STARTUP), fovRadius(10), currentKey((SDL_Keycode)0) {
+    map = nullptr;
+    gui = nullptr;
     initialized = false;
 }
 
@@ -23,7 +40,8 @@ Engine::~Engine() {
         delete actor;
     }
     actors.clear();
-    delete map;
+    if (map) delete map;
+    if (gui) delete gui;
 }
 
 void Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
@@ -45,6 +63,8 @@ void Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
 
         auto tileset = tcod::load_tilesheet(GetDataDir() / "dejavu16x16_gs_tc.png", {32, 8}, tcod::CHARMAP_TCOD);
         params.tileset = tileset.get();
+        tileWidth = tileset.get_tile_height();
+        tileHeight = tileset.get_tile_width();
 
         console = tcod::Console{screenWidth, screenHeight};
         params.console = console.get();
@@ -55,7 +75,9 @@ void Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
         player->attacker = new Attacker(5);
         player->ai = new PlayerAi();
         actors.push_back(player);
-        map = new Map(console.get_width(), console.get_height());
+        gui = new Gui();
+        map = new Map(console.get_width(), console.get_height() - gui->get_height());
+        gui->message(red, "Welcome stranger!\nPrepare to perish in the Tombs of the Ancient Kings.");
         initialized = true;
         gameStatus = STARTUP;
         running = true;
@@ -69,6 +91,7 @@ void Engine::update() {
     // Handle input.
     SDL_Event event;
     currentKey = (SDL_Keycode)0; // Clear each time  only new keys stay
+    mouseClicked = false; // Clear each time only want current status for the frame.
 
     if (gameStatus == STARTUP) {
         // Compute FOV on first frame.
@@ -96,6 +119,19 @@ void Engine::update() {
                 break;
             }
             break;
+        case SDL_MOUSEBUTTONDOWN:
+            switch (event.button.button)
+            {
+            case SDL_BUTTON_LEFT:
+            case SDL_BUTTON_RIGHT:
+                // Split this out later - left move, right look
+
+                break;
+            }
+            break;
+        case SDL_MOUSEMOTION:
+            mouseX = event.motion.x / tileWidth;
+            mouseY = event.motion.y / tileHeight;
         }
     }
 
@@ -119,9 +155,12 @@ void Engine::render() {
     }
 
     // start of a gui
+    /*
     if (player->destructible) {
         TCOD_console_printf(console.get(), 1, console.get_height() - 2, "HP: %d/%d",(int)player->destructible->hp, (int)player->destructible->maxHp);
     }
+    */
+    gui->render(console);
     context.present(console);
 }
 
