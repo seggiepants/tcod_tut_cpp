@@ -72,6 +72,10 @@ bool Map::isExplored(int x, int y) const {
 }
 
 bool Map::isInFov(int x, int y) const {
+    if (x < 0 || y < 0 || x >= width || y >= height) {
+        return false;
+    }
+    
     if (map->isInFov(x, y)) {
         tiles[x + (y * width)].explored = true;
         return true;
@@ -88,39 +92,29 @@ void Map::setWall(int x, int y) {
 }
 
 void Map::render(tcod::Console & console) const {
-    static const TCOD_ColorRGBA unexplored {0, 0, 0, 255};
-    static const TCOD_ColorRGBA darkWall {0, 0, 100, 255};
-    static const TCOD_ColorRGBA darkGround {50, 50, 150, 255};    
-    static const TCOD_ColorRGBA lightWall {130, 110, 50, 255 };
-    static const TCOD_ColorRGBA lightGround {200, 180, 50, 255 };
-
-
     for(int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             TCOD_ConsoleTile& tile = console.at(x, y);
             tile.ch = ' ';
             if (isInFov(x, y)) {
-                tile.bg = isWall(x, y) ? lightWall : lightGround;
+                tile.bg = isWall(x, y) ? LIGHT_WALL : LIGHT_GROUND;
             } else if (isExplored(x, y)) {
-                tile.bg = isWall(x, y) ? darkWall : darkGround;
+                tile.bg = isWall(x, y) ? DARK_WALL : DARK_GROUND;
             }
             else
             {
-                tile.bg = unexplored;
+                tile.bg = UNEXPLORED;
             }
         }
     }
 }
 
 void Map::addMonster(int x, int y) {
-    static TCOD_ColorRGBA colorOrc = {63, 127, 63, 255};
-    static TCOD_ColorRGBA colorTroll = {0, 127, 0, 255};
-
     TCODRandom* rng = TCODRandom::getInstance();
 
     if (rng->getInt(0, 100) < 80) {
         // Create an orc
-        Actor* orc = new Actor(x, y, 'o', "Orc", colorOrc);
+        Actor* orc = new Actor(x, y, 'o', "Orc", COLOR_ORC);
         orc->destructible = new MonsterDestructible(10, 0, "dead orc");
         orc->attacker = new Attacker(3);
         orc->ai = new MonsterAi();
@@ -129,7 +123,7 @@ void Map::addMonster(int x, int y) {
     else 
     {
         // Create a troll
-        Actor* troll = new Actor(x, y, 'T', "Troll", colorTroll);
+        Actor* troll = new Actor(x, y, 'T', "Troll", COLOR_TROLL);
         troll->destructible = new MonsterDestructible(16, 1, "troll carcass");
         troll->attacker = new Attacker(4);
         troll->ai = new MonsterAi();

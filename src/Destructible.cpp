@@ -28,11 +28,10 @@ float Destructible::takeDamage(Actor* owner, float damage) {
     return damage;
 }
 
-void Destructible::die(Actor* owner) {
-    static TCOD_ColorRGBA colorCorpse {191, 0, 0, 255}; //TCODColor::darkRed is deprecated
+void Destructible::die(Actor* owner) {    
     // transform the actor into a corpse!
     owner->ch = '%';
-    owner->col = colorCorpse;
+    owner->col = COLOR_CORPSE;
     delete owner->name;
     owner->name = new std::string(corpseName->c_str());
     owner->blocks = false;
