@@ -9,6 +9,8 @@ class PlayerAi : public Ai {
 
     protected:
     bool moveOrAttack(Actor* owner, int targetX, int targetY);
+    void handleActionKey(Actor* owner, int key);
+    Actor* chooseFromInventory(Actor* owner);
 };
 
 #endif

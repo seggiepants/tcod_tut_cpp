@@ -1,12 +1,14 @@
 #include "Map.hpp"
 #include "Engine.hpp"
 #include "Attacker.hpp"
+#include "Healer.hpp"
 #include "MonsterAi.hpp"
 #include "MonsterDestructible.hpp"
 
 // Max size not used yet.
 static const int ROOM_MIN_SIZE = 6;
 static const int NODE_MIN_SIZE = ROOM_MIN_SIZE + 5; // Must be at least ROOM_MIN_SIZE + 2 to allow walls.
+static const int MAX_ROOM_ITEMS = 2;
 static const int MAX_ROOM_MONSTERS = 3;
 
 class BspListener : public ITCODBspCallback { 
@@ -109,6 +111,14 @@ void Map::render(tcod::Console & console) const {
     }
 }
 
+void Map::addItem(int x, int y) {
+    Actor* healthPotion = new Actor(x, y, '!', "health potion", VIOLET);
+
+    healthPotion->blocks = false;
+    healthPotion->pickable = new Healer(4);
+    engine.actors.push_back(healthPotion);
+}
+
 void Map::addMonster(int x, int y) {
     TCODRandom* rng = TCODRandom::getInstance();
 
@@ -176,6 +186,16 @@ void Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
                 addMonster(x, y);
             }
             countMonsters--;
+        }
+
+        int countItems = rng->getInt(0, MAX_ROOM_ITEMS);
+        while (countItems > 0) {
+            int x = rng->getInt(x1, x2);
+            int y = rng->getInt(y1, y2);
+            if (canWalk(x, y)) {
+                addItem(x, y);
+            }
+            countItems--;
         }
     }
 }
