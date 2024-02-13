@@ -9,7 +9,7 @@ I am a vcpkg and CMake novice so I found a nice template at [https://github.com/
 
 I added a notes log to document frustrations/changes along the way. I also added a Screenshots folder so you can see how it looks as I go through the tutorial. The current version looks like this:
 
-![Part 07](screenshots/Part_07_The_GUI.png)
+![Part 07](screenshots/Part_08_Items_and_Inventory.png)
 
 
 ## Dependencies

@@ -15,6 +15,15 @@ Destructible::~Destructible() {
     delete corpseName;
 }
 
+float Destructible::heal(float amount) {
+    hp += amount;
+    if (hp > maxHp) {
+        amount -= hp - maxHp;
+        hp = maxHp;
+    }
+    return amount;
+}
+
 float Destructible::takeDamage(Actor* owner, float damage) {
     damage -= defense;
     if (damage > 0) {

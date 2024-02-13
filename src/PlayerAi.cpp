@@ -1,5 +1,7 @@
 #include "PlayerAi.hpp"
 #include "Engine.hpp"
+#include "Container.hpp"
+#include "Pickable.hpp"
 #include <SDL.h>
 
 void PlayerAi::update(Actor* owner) {
@@ -28,6 +30,7 @@ void PlayerAi::update(Actor* owner) {
         dx = 1;
         break;
     default:
+        handleActionKey(owner, engine.currentKey);
         break;
     }
     
@@ -37,6 +40,94 @@ void PlayerAi::update(Actor* owner) {
             engine.map->computeFov();            
         }
     }    
+}
+
+Actor* PlayerAi::chooseFromInventory(Actor* owner) {
+    static const int INVENTORY_WIDTH = 50;
+    static const int INVENTORY_HEIGHT = 28; // 26 letters in alphabet + 2 for border.
+    
+    tcod::Console con(INVENTORY_WIDTH, INVENTORY_HEIGHT);
+
+    // display the inventory frame
+    TCOD_ConsoleTile tile;
+    tile.bg = LIGHT_GROUND;
+    tile.fg = WHITE;
+    tile.ch = ' ';
+    con.clear(tile);
+    TCOD_console_printf_frame(con.get(), 0, 0, INVENTORY_WIDTH, INVENTORY_HEIGHT, true, TCOD_BKGND_DEFAULT, "inventory");
+    int shortcut = (int)'a';
+    int y = 1;
+    for(auto const & actor : owner->container->inventory) {
+        TCOD_console_printf(con.get(), 2, y, "(%c) %s", shortcut, actor->name->c_str());
+        y++;
+        shortcut++;
+    }    
+    tcod::blit(engine.getConsole(), con, {(engine.getConsole().get_width() - INVENTORY_WIDTH) / 2, (engine.getConsole().get_height() - INVENTORY_HEIGHT) / 2},{0, 0, con.get_width(), con.get_height()}, 1.0f, 1.0f);    
+    engine.flush();
+    SDL_Event event;
+    SDL_Keycode currentKey;
+    bool done = false;
+    while (!done) {
+        // Wait for a key up or exit
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+            case SDL_QUIT:
+                engine.Stop();
+                return nullptr;
+                break;
+            case SDL_KEYDOWN:
+                currentKey = event.key.keysym.sym;
+                if (currentKey >= SDLK_a && currentKey <= SDLK_z)
+                {
+                    int index = currentKey - SDLK_a;
+                    if (index >= 0 && (size_t)index < owner->container->inventory.size()) {
+                        std::list<Actor*>::iterator iter = owner->container->inventory.begin();
+                        std::advance(iter, index);
+                        return (*iter);
+                    }
+                }            
+                done = true;
+                break;
+            }
+        }
+    }
+    return nullptr;
+}
+
+void PlayerAi::handleActionKey(Actor* owner, int key) {
+    switch(key) {
+    case SDLK_g:
+        {
+            bool found = false;
+            for(auto const & actor : engine.actors){
+                if (actor->pickable && actor->x == owner->x && actor->y == owner-> y) {
+                    if (actor->pickable->pick(actor, owner)) {
+                        found = true;
+                        engine.gui->message(lightGrey, "You picked up the %s.", actor->name->c_str());
+                        break;
+                    } else if (!found) {
+                        found = true;
+                        engine.gui->message(red, "Your inventory is full.");
+                    }
+                }
+            }
+            if (!found) {
+                engine.gui->message(lightGrey, "There is nothing here that you can pick up.");
+            }
+        }
+        break;
+    case SDLK_i:
+        {            
+            Actor* actor = chooseFromInventory(owner);
+            if (actor) {
+                actor->pickable->use(actor, owner);
+                engine.gameStatus = Engine::NEW_TURN;
+            }
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 bool PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
@@ -57,7 +148,8 @@ bool PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
 
     // look for corpses
     for (auto const & actor : engine.actors) {
-        if (actor->destructible && actor->destructible->isDead() && actor->x == targetX && actor->y == targetY) {
+        bool corpseOrItem = ((actor->destructible && actor->destructible->isDead()) || actor->pickable);
+        if (corpseOrItem && actor->x == targetX && actor->y == targetY) {
             engine.gui->message(lightGrey, "There's a %s here", actor->name->c_str());
             break;
         }

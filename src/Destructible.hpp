@@ -7,8 +7,9 @@ class Actor;
 class Destructible {
 public:
     Destructible(float maxHp, float defense, const char* corpseName);
-    ~Destructible();
+    virtual ~Destructible();
     inline bool isDead() { return hp <= 0; }
+    float heal(float amount);
     float takeDamage(Actor* owner, float damage);
     virtual void die(Actor* owner);
     float maxHp; // maximum health points

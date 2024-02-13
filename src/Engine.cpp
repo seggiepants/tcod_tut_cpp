@@ -4,6 +4,7 @@
 #include "Attacker.hpp"
 #include "PlayerDestructible.hpp"
 #include "PlayerAi.hpp"
+#include "Container.hpp"
 
 TCOD_ColorRGBA BLACK = {0, 0, 0, 255};
 TCOD_ColorRGBA BLUE = {0, 0, 255, 255};
@@ -12,6 +13,7 @@ TCOD_ColorRGBA GREEN = {0, 255, 0, 255};
 TCOD_ColorRGBA MAGENTA = {255, 0, 255, 255};
 TCOD_ColorRGBA RED = {255, 0, 0, 255};
 TCOD_ColorRGBA WHITE = {255, 255, 255, 255};
+TCOD_ColorRGBA VIOLET = {127, 0, 255, 255};
 TCOD_ColorRGBA YELLOW = {255, 255, 0, 255};
 TCOD_ColorRGBA COLOR_CORPSE = {191, 0, 0, 255};
 TCOD_ColorRGBA COLOR_ORC = {63, 127, 63, 255};
@@ -74,9 +76,10 @@ void Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
         player->destructible = new PlayerDestructible(30, 2, "your cadaver");
         player->attacker = new Attacker(5);
         player->ai = new PlayerAi();
-        actors.push_back(player);
+        player->container = new Game::Container(26);
         gui = new Gui();
         map = new Map(console.get_width(), console.get_height() - gui->get_height());
+        actors.push_back(player); // Make sure player is on-top.
         gui->message(red, "Welcome stranger!\nPrepare to perish in the Tombs of the Ancient Kings.");
         initialized = true;
         gameStatus = STARTUP;
@@ -107,7 +110,7 @@ void Engine::update() {
         switch (event.type) {
         case SDL_QUIT:
             //std::exit(EXIT_SUCCESS);
-            running = false;
+            Stop();
             break;
         case SDL_KEYDOWN:
             switch(event.key.keysym.sym) {

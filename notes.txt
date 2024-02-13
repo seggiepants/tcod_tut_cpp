@@ -1,3 +1,11 @@
+TODO:
+- Put all of the classes in the Game namespace.
+- Everything passing around the Console should use the getter now.
+- Different Scene classes (inventory)?
+- Get emsripten working.
+- Mouselook on chromebook (look into it).
+
+
 tutorial: https://www.roguebasin.com/index.php?title=Complete_roguelike_tutorial_using_C%2B%2B_and_libtcod_-_part_1:_setting_up
 getting started docs: https://libtcod.readthedocs.io/en/latest/guides/getting-started.html
 github: https://github.com/libtcod/libtcod
@@ -159,6 +167,20 @@ I should probably add in extra SDL2 libraries for sound effects and image handli
 
 Why was such a small part soooo long?
 
+12 FEB 2024
+Part 08 Items and Inventory
+
+Over the weekend I tried installing emscripten on my chromebook. Still not working. I think the config file is looking for the executables in the emscripten folder but they got put in a generic binaries folder. Groan. Guess I try windows next, but not today. By the way don't forget the submodule init in git or things break strange. Also mouselook wasn't working on the chromebook. Is that a chromebook thing or my previous misgivings coming back to haunt me?
+
+Skipped around a bit so I could stub in Container and Pickable. I think I missed some delete calls in the actor destructor previously (ai, attacker, destructible).
+
+Getting strange errors when i stopped to build and make sure things are working so far (just before choose from inventory). I am getting strange errors on Container* container; as a player member. I am thinking that maybe Container is already an STL reserved word.
+
+I tried changing Container to Holder which I didn't really like. It worked but then Pickable also had problems. So I put them both in a Game namespace. That still didn't work I needed to make them forward references since Actor references Container and Pickable which in turn reference Actor. Eventually I got it working. I can't pick anything up yet (no pickable object I am guessing), but it builds and I can see potions on the map. I should probably put all of my classes/code in the Game namespace. I should have been able to pick, I just missed a spot, working now.
+
+I had been passing around the console to functions when I needed it, but I finally broke down and made an accessor for it since I needed to get it from deep within the playerAi to write to the screen. I should really go back and refactor now. Speaking of which the inventory screen should really be a different scene as game libraries like to call it now. It has its own loop while waiting for input. I was going to just try SDL_GetEvent which blocks but that is a no-no on emscripten so I did a loop. Problem was I never saw the screen. Turns out I was only looking for input once. I needed to put a loop around the loop to make sure it waited until I got something good. I thought I had a debouncing problem for a while. By the way why do we reuse a color without saying it is one of the colors we already have a constant for.
+
+Flush was also giving me problems, had to make an engine thing for that too. Another hint this should be a different scene, doesn't seem like that should be public. I think I need to put a TODO list at the top of things that need fixing/refactoring.
 
 
 

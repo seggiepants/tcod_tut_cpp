@@ -24,6 +24,7 @@ protected:
     Tile* tiles;
     TCODMap* map;
     friend class BspListener;
+    void addItem(int x, int y);
     void addMonster(int x, int y);
     void dig(int x1, int y1, int x2, int y2);
     void createRoom(bool first, int x1, int y1, int x2, int y2);

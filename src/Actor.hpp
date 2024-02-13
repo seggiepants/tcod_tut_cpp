@@ -8,6 +8,11 @@
 #include "Destructible.hpp"
 #include "Ai.hpp"
 
+namespace Game { 
+    class Container; 
+    class Pickable;
+}
+
 class Actor {
     public:
     int x, y; // position on the map
@@ -18,6 +23,8 @@ class Actor {
     Attacker* attacker; // something that deals damage
     Destructible* destructible; // something that can be damaged
     Ai* ai; // something self-updating
+    Game::Pickable* pickable; // something that can be picked and used.
+    Game::Container* container; // something that can contain actors.
 
     Actor(int x, int y, int ch, const char* name, const TCOD_ColorRGBA & col);
     ~Actor();

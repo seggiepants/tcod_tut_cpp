@@ -17,7 +17,10 @@ public:
     void update();
     void render();
     bool isRunning() { return running; }
+    void Stop() { running = false;}
     void sendToBack(Actor* actor);
+    void flush() { context.present(console); }
+    tcod::Console& getConsole() { return console; }; 
 
     std::list<Actor *> actors;
     enum GameStatus {
@@ -55,6 +58,7 @@ extern TCOD_ColorRGBA GREEN;
 extern TCOD_ColorRGBA MAGENTA;
 extern TCOD_ColorRGBA RED;
 extern TCOD_ColorRGBA WHITE;
+extern TCOD_ColorRGBA VIOLET;
 extern TCOD_ColorRGBA YELLOW;
 extern TCOD_ColorRGBA COLOR_CORPSE;
 extern TCOD_ColorRGBA COLOR_ORC;
