@@ -3,13 +3,15 @@
 
 #include "Ai.hpp"
 
-class MonsterAi : public Ai {
-public:
-    void update(Actor* owner);
+namespace Game {
+    class MonsterAi : public Ai {
+    public:
+        void update(Actor* owner);
 
-protected:
-    void moveOrAttack(Actor* owner, int targetX, int targetY);
-    int moveCount = 0;
-};
+    protected:
+        void moveOrAttack(Actor* owner, int targetX, int targetY);
+        int moveCount = 0;
+    };
+}
 
 #endif

@@ -9,13 +9,15 @@
 #pragma warning(disable : 4297)  // Allow "throw" in main().  Letting the compiler handle termination.
 #endif
 
-Engine engine;
+Game::Engine engine;
 
 /// Game loop.
 void main_loop() {
   // Rendering.
   engine.update();
   engine.render();
+  engine.present();
+  
 }
 
 /// Main program entry point.

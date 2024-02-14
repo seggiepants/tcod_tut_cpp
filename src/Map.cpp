@@ -1,7 +1,10 @@
 #include "Map.hpp"
 #include "Engine.hpp"
 #include "Attacker.hpp"
+#include "Confuser.hpp"
+#include "Fireball.hpp"
 #include "Healer.hpp"
+#include "LightningBolt.hpp"
 #include "MonsterAi.hpp"
 #include "MonsterDestructible.hpp"
 
@@ -11,15 +14,17 @@ static const int NODE_MIN_SIZE = ROOM_MIN_SIZE + 5; // Must be at least ROOM_MIN
 static const int MAX_ROOM_ITEMS = 2;
 static const int MAX_ROOM_MONSTERS = 3;
 
-class BspListener : public ITCODBspCallback { 
-    private:
-    Map &map; // a map to dig
-    int roomNum; // room number
-    int lastX, lastY; // center of the last room;
-    public :
-    BspListener(Map &map) : map(map), roomNum(0) {};
-    bool visitNode(TCODBsp* node, void* userData);
-};
+namespace Game {
+    class BspListener : public ITCODBspCallback { 
+        private:
+        Map &map; // a map to dig
+        int roomNum; // room number
+        int lastX, lastY; // center of the last room;
+        public :
+        BspListener(Map &map) : map(map), roomNum(0) {};
+        bool visitNode(TCODBsp* node, void* userData);
+    };
+}
 
 #ifdef _WIN32
 #define UNUSED
@@ -27,7 +32,7 @@ class BspListener : public ITCODBspCallback {
 #define UNUSED __attribute__((unused))
 #endif
 
-bool BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
+bool Game::BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
     if (node->isLeaf()) {
         int x, y, w, h;
 
@@ -51,7 +56,7 @@ bool BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
     return true;
 }
 
-Map::Map(int width, int height) : width(width), height(height) {
+Game::Map::Map(int width, int height) : width(width), height(height) {
     tiles = new Tile[width * height];
     map = new TCODMap(width, height);
     TCODBsp bsp(0, 0, width, height);
@@ -60,20 +65,20 @@ Map::Map(int width, int height) : width(width), height(height) {
     bsp.traverseInvertedLevelOrder(&listener, NULL);
 }
 
-Map::~Map() {
+Game::Map::~Map() {
     delete[] tiles;
     delete map;
 }
 
-bool Map::isWall(int x, int y) const {
+bool Game::Map::isWall(int x, int y) const {
     return !map->isWalkable(x, y);
 }
 
-bool Map::isExplored(int x, int y) const {
+bool Game::Map::isExplored(int x, int y) const {
     return tiles[x + (y * width)].explored;
 }
 
-bool Map::isInFov(int x, int y) const {
+bool Game::Map::isInFov(int x, int y) const {
     if (x < 0 || y < 0 || x >= width || y >= height) {
         return false;
     }
@@ -85,15 +90,16 @@ bool Map::isInFov(int x, int y) const {
     return false;
 }
 
-void Map::computeFov() {
+void Game::Map::computeFov() {
     map->computeFov(engine.player->x, engine.player->y, engine.fovRadius);
 }
 
-void Map::setWall(int x, int y) {
+void Game::Map::setWall(int x, int y) {
     map->setProperties(x, y, true, false);    
 }
 
-void Map::render(tcod::Console & console) const {
+void Game::Map::render() const {
+    tcod::Console& console = engine.get_console();
     for(int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             TCOD_ConsoleTile& tile = console.at(x, y);
@@ -111,15 +117,38 @@ void Map::render(tcod::Console & console) const {
     }
 }
 
-void Map::addItem(int x, int y) {
-    Actor* healthPotion = new Actor(x, y, '!', "health potion", VIOLET);
+void Game::Map::addItem(int x, int y) {
+    TCODRandom* rng = TCODRandom::getInstance();
 
-    healthPotion->blocks = false;
-    healthPotion->pickable = new Healer(4);
-    engine.actors.push_back(healthPotion);
+    int dice = rng->getInt(0, 100);
+    if (dice < 70) { 
+        Actor* healthPotion = new Actor(x, y, '!', "health potion", VIOLET);
+
+        healthPotion->blocks = false;
+        healthPotion->pickable = new Healer(4);
+        engine.actors.push_back(healthPotion);
+    } else if (dice < 70 + 10) {
+        // create a scroll of lightning bolt.
+        Actor* scrollOfLightningBolt = new Actor(x, y, (int)'#', "scroll of lightning bolt", LIGHT_YELLOW);
+        scrollOfLightningBolt->blocks = false;
+        scrollOfLightningBolt->pickable = new LightningBolt(5, 20);
+        engine.actors.push_back(scrollOfLightningBolt);
+    } else if (dice < 70 + 10 + 10) {
+        // create a scroll of fireball
+        Actor* scrollOfFireball = new Actor(x, y, (int)'#', "scroll of fireball", LIGHT_YELLOW);
+        scrollOfFireball->blocks = false;
+        scrollOfFireball->pickable = new Fireball(3, 12);
+        engine.actors.push_back(scrollOfFireball);
+    } else { //if (dice < 70 + 10 + 10 + 10) {
+        // create a scroll of confusion
+        Actor* scrollOfConfusion = new Actor(x, y, (int)'#', "scroll of confusion", LIGHT_YELLOW);
+        scrollOfConfusion->blocks = false;
+        scrollOfConfusion->pickable = new Confuser(10, 8);
+        engine.actors.push_back(scrollOfConfusion);
+    }
 }
 
-void Map::addMonster(int x, int y) {
+void Game::Map::addMonster(int x, int y) {
     TCODRandom* rng = TCODRandom::getInstance();
 
     if (rng->getInt(0, 100) < 80) {
@@ -141,7 +170,7 @@ void Map::addMonster(int x, int y) {
     }
 }
 
-bool Map::canWalk(int x, int y) const {
+bool Game::Map::canWalk(int x, int y) const {
     if (isWall(x, y)) {
         // this is a wall
         return false;
@@ -156,7 +185,7 @@ bool Map::canWalk(int x, int y) const {
     return true;
 }
 
-void Map::dig(int x1, int y1, int x2, int y2) {
+void Game::Map::dig(int x1, int y1, int x2, int y2) {
     if (x2 < x1) { 
         std::swap(x1, x2);
     }
@@ -171,7 +200,7 @@ void Map::dig(int x1, int y1, int x2, int y2) {
     }
 }
 
-void Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
+void Game::Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
     dig(x1, y1, x2, y2);
     if (first) {
         engine.player->x = (x1 + x2) / 2;

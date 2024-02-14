@@ -10,7 +10,11 @@ TCOD_ColorRGBA BLACK = {0, 0, 0, 255};
 TCOD_ColorRGBA BLUE = {0, 0, 255, 255};
 TCOD_ColorRGBA CYAN = {0, 255, 255, 255};
 TCOD_ColorRGBA GREEN = {0, 255, 0, 255};
+TCOD_ColorRGBA LIGHT_BLUE = {63, 63, 255, 255};
+TCOD_ColorRGBA LIGHT_GREEN = {63, 255, 63, 255};
+TCOD_ColorRGBA LIGHT_YELLOW = {255, 255, 63, 255};
 TCOD_ColorRGBA MAGENTA = {255, 0, 255, 255};
+TCOD_ColorRGBA ORANGE = {255, 127, 0, 255};
 TCOD_ColorRGBA RED = {255, 0, 0, 255};
 TCOD_ColorRGBA WHITE = {255, 255, 255, 255};
 TCOD_ColorRGBA VIOLET = {127, 0, 255, 255};
@@ -25,19 +29,25 @@ TCOD_ColorRGBA LIGHT_WALL = {130, 110, 50, 255 };
 TCOD_ColorRGBA UNEXPLORED = {0, 0, 0, 255};
 
 TCOD_ColorRGB black = {0, 0, 0};
+TCOD_ColorRGB cyan = {0, 255, 255};
 TCOD_ColorRGB darkerRed = {127, 0, 0}; 
+TCOD_ColorRGB lightBlue = {63, 63, 255};
+TCOD_ColorRGB lightGreen = {63, 255, 63};
 TCOD_ColorRGB lightGrey = {159, 159, 159};
-TCOD_ColorRGB lightRed = {255, 63, 63}; 
+TCOD_ColorRGB lightRed = {255, 63, 63};
+TCOD_ColorRGB lightYellow = {255, 255, 63};
+TCOD_ColorRGB orange = {255, 127, 0};
 TCOD_ColorRGB red = {255, 0, 0};
 TCOD_ColorRGB white = {255, 255, 255};
 
-Engine::Engine() : gameStatus(STARTUP), fovRadius(10), currentKey((SDL_Keycode)0) {
+
+Game::Engine::Engine() : gameStatus(STARTUP), fovRadius(10), currentKey((SDL_Keycode)0) {
     map = nullptr;
     gui = nullptr;
     initialized = false;
 }
 
-Engine::~Engine() {
+Game::Engine::~Engine() {
     for(auto const & actor : actors){
         delete actor;
     }
@@ -46,7 +56,7 @@ Engine::~Engine() {
     if (gui) delete gui;
 }
 
-void Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
+void Game::Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
     if (initialized)
         return;
 
@@ -90,7 +100,7 @@ void Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
     }
 }
 
-void Engine::update() {
+void Game::Engine::update() {
     // Handle input.
     SDL_Event event;
     currentKey = (SDL_Keycode)0; // Clear each time  only new keys stay
@@ -148,12 +158,12 @@ void Engine::update() {
     }
 }
 
-void Engine::render() {
+void Game::Engine::render() {
     console.clear();
-    map->render(console);
+    map->render();
     for(auto const & actor : actors) {
         if (map->isInFov(actor->x, actor->y)) {
-            actor->render(console);
+            actor->render();
         }
     }
 
@@ -163,17 +173,165 @@ void Engine::render() {
         TCOD_console_printf(console.get(), 1, console.get_height() - 2, "HP: %d/%d",(int)player->destructible->hp, (int)player->destructible->maxHp);
     }
     */
-    gui->render(console);
-    context.present(console);
+    gui->render();    
 }
 
-void Engine::sendToBack(Actor* actor) {
+bool Game::Engine::pickATile(int* x, int* y, float maxRange) {
+    const float brighten = 1.2f;
+    SDL_Event event;
+    int mouseX = player->x; // This might fail on chromebook.
+    int mouseY = player->y; // going to add cursor keys as a fall-back.
+    int dx = 0;
+    int dy = 0;
+    bool positionOK = false;
+
+    while (true) {
+        render();
+
+        // highlight the possible range
+        for(int cy = 0; cy < map->height; ++cy) {
+            for (int cx = 0; cx < map->width; ++cx) {
+                if (map->isInFov(cx, cy) && (maxRange == 0.0f || player->getDistance(cx, cy) < maxRange)) {
+                    TCOD_ColorRGB clr = TCOD_console_get_char_background(console.get(), cx, cy);
+                    /*
+                    clr.r *= brighten;
+                    clr.g *= brighten;
+                    clr.b *= brighten;
+                    */
+                    TCOD_console_set_char_background(console.get(), cx, cy, lightGrey, TCOD_BKGND_SET);
+                }
+            }
+        }        
+        positionOK = map->isInFov(mouseX, mouseY) && (maxRange == 0.0f || player->getDistance(mouseX, mouseY) <= maxRange);
+        if (positionOK) {
+            //TCOD_console_printf(console.get(),0, 0, "Picking at (%d,%d)...", mouseX, mouseY);
+            TCOD_console_set_char_background(console.get(), mouseX, mouseY, white, TCOD_BKGND_SET);
+            // TCOD_console_set_char(console.get(), mouseX, mouseY, (int) 'X');
+        }
+
+        // Wait for a key up or exit
+        while (SDL_PollEvent(&event)) {
+            dx = 0;
+            dy = 0;
+            switch (event.type) {
+            case SDL_QUIT:
+                engine.Stop();
+                return false;
+                break;
+            case SDL_KEYDOWN:
+                {
+                    currentKey = event.key.keysym.sym;
+                    switch(engine.currentKey) {
+                    case SDLK_ESCAPE:
+                        return false;
+                        break;
+                    case SDLK_RETURN:
+                    case SDLK_RETURN2:
+                    case SDLK_KP_ENTER:
+                        *x = mouseX;
+                        *y = mouseY;
+                        return positionOK;
+                        break;
+                    case SDLK_KP_9:
+                        dy = -1;
+                        dx = 1;
+                        break;
+                    case SDLK_UP:
+                    case SDLK_KP_8:
+                        dy = -1;
+                        break;
+                    case SDLK_KP_7:
+                        dy = -1;
+                        dx = -1;
+                        break;
+                    case SDLK_RIGHT:
+                    case SDLK_KP_6:
+                        dx = 1;
+                        break;
+                    case SDLK_LEFT:
+                    case SDLK_KP_4:
+                        dx = -1;
+                        break;
+                    case SDLK_KP_3:
+                        dy = 1;
+                        dx = 1;
+                        break;
+                    case SDLK_DOWN:
+                    case SDLK_KP_2:
+                        dy = 1;
+                        break;
+                    case SDLK_KP_1:
+                        dy = 1;
+                        dx = -1;
+                        break;                        
+                    }
+                    
+                    if (dx!= 0 || dy != 0) {
+                        mouseX += dx;
+                        mouseY += dy;
+                    }
+                }    
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                {
+                    switch (event.button.button)
+                    {
+                    case SDL_BUTTON_LEFT:
+                        *x = mouseX;
+                        *y = mouseY;
+                        return positionOK;
+                        break;
+                    case SDL_BUTTON_RIGHT:
+                        return false;
+                        break;
+                    }
+                }
+                break;
+            case SDL_MOUSEMOTION:
+                mouseX = event.motion.x / tileWidth;
+                mouseY = event.motion.y / tileHeight;
+                break;
+            }
+        }
+        flush();
+    }
+    return false;
+}
+
+void Game::Engine::sendToBack(Actor* actor) {
     actors.remove(actor);
     actors.push_front(actor);
 }
 
+Game::Actor* Game::Engine::getClosestMonster(int x, int y, float range) const {
+    Game::Actor* closest = nullptr;
+
+    float bestDistance = 1E6f; // start with a really big number.
+    
+    for(auto const & actor : actors){
+        if (actor != player && actor->destructible && !actor->destructible->isDead()) {
+            float distance = actor->getDistance(x, y);
+            if (distance < bestDistance && (distance <= range || range == 0.0f)) {
+                bestDistance = distance;
+                closest = actor;
+            }
+        }
+    }
+
+    return closest;
+}
+
+Game::Actor* Game::Engine::getActor(int x, int y) const {
+    for(auto const & actor : actors){
+        if (actor->x == x && actor->y == y && actor->destructible && !actor->destructible->isDead()) {
+            return actor;
+        }
+    }
+    return nullptr;
+}
+
 /// Return the data directory.
-std::filesystem::path Engine::GetDataDir() {
+std::filesystem::path Game::Engine::GetDataDir() {
     static auto root_directory = std::filesystem::path{"."};  // Begin at the working directory.
     while (!std::filesystem::exists(root_directory / "data")) {
         // If the current working directory is missing the data dir then it will assume it exists in any parent directory.

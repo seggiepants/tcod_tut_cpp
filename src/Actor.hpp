@@ -13,23 +13,26 @@ namespace Game {
     class Pickable;
 }
 
-class Actor {
-    public:
-    int x, y; // position on the map
-    int ch; // ascii code
-    std::string* name;
-    TCOD_ColorRGBA col; // color    
-    bool blocks; // can we walk on this actor?
-    Attacker* attacker; // something that deals damage
-    Destructible* destructible; // something that can be damaged
-    Ai* ai; // something self-updating
-    Game::Pickable* pickable; // something that can be picked and used.
-    Game::Container* container; // something that can contain actors.
+namespace Game {
+    class Actor {
+        public:
+        int x, y; // position on the map
+        int ch; // ascii code
+        std::string* name;
+        TCOD_ColorRGBA col; // color    
+        bool blocks; // can we walk on this actor?
+        Attacker* attacker; // something that deals damage
+        Destructible* destructible; // something that can be damaged
+        Ai* ai; // something self-updating
+        Game::Pickable* pickable; // something that can be picked and used.
+        Game::Container* container; // something that can contain actors.
 
-    Actor(int x, int y, int ch, const char* name, const TCOD_ColorRGBA & col);
-    ~Actor();
-    void render(tcod::Console& ) const;
-    void update();
-};
+        Actor(int x, int y, int ch, const char* name, const TCOD_ColorRGBA & col);
+        ~Actor();
+        void render() const;
+        void update();
+        float getDistance(int cx, int cy) const;
+    };
+}
 
 #endif //__ACTOR_HPP__

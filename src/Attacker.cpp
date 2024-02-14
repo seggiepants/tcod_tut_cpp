@@ -2,9 +2,9 @@
 #include "Actor.hpp"
 #include "Engine.hpp"
 
-Attacker::Attacker(float power) : power(power) {}
+Game::Attacker::Attacker(float power) : power(power) {}
 
-void Attacker::attack(Actor* owner, Actor* target) {
+void Game::Attacker::attack(Actor* owner, Actor* target) {
     if (target->destructible && !target->destructible->isDead()) {
         float damage = power - target->destructible->defense;
         if (damage > 0) {

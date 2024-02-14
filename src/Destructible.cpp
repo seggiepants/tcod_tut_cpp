@@ -3,7 +3,7 @@
 #include "Engine.hpp"
 #include <string>
 
-Destructible::Destructible(float maxHp, float defense, const char* corpseName) :
+Game::Destructible::Destructible(float maxHp, float defense, const char* corpseName) :
     maxHp(maxHp),
     hp(maxHp),
     defense(defense)
@@ -11,11 +11,11 @@ Destructible::Destructible(float maxHp, float defense, const char* corpseName) :
     this->corpseName = new std::string(corpseName);
 }
 
-Destructible::~Destructible() {
+Game::Destructible::~Destructible() {
     delete corpseName;
 }
 
-float Destructible::heal(float amount) {
+float Game::Destructible::heal(float amount) {
     hp += amount;
     if (hp > maxHp) {
         amount -= hp - maxHp;
@@ -24,7 +24,7 @@ float Destructible::heal(float amount) {
     return amount;
 }
 
-float Destructible::takeDamage(Actor* owner, float damage) {
+float Game::Destructible::takeDamage(Actor* owner, float damage) {
     damage -= defense;
     if (damage > 0) {
         hp -= damage;
@@ -37,7 +37,7 @@ float Destructible::takeDamage(Actor* owner, float damage) {
     return damage;
 }
 
-void Destructible::die(Actor* owner) {    
+void Game::Destructible::die(Actor* owner) {    
     // transform the actor into a corpse!
     owner->ch = '%';
     owner->col = COLOR_CORPSE;

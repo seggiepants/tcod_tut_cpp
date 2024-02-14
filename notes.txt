@@ -1,9 +1,10 @@
 TODO:
-- Put all of the classes in the Game namespace.
-- Everything passing around the Console should use the getter now.
+x Put all of the classes in the Game namespace.
+X Everything passing around the Console should use the getter now.
 - Different Scene classes (inventory)?
 - Get emsripten working.
 - Mouselook on chromebook (look into it).
+- Want a generic cursor keys event handler. Should let you use keyboard, and/or joystick. Interpreted it twice now.
 
 
 tutorial: https://www.roguebasin.com/index.php?title=Complete_roguelike_tutorial_using_C%2B%2B_and_libtcod_-_part_1:_setting_up
@@ -182,5 +183,26 @@ I had been passing around the console to functions when I needed it, but I final
 
 Flush was also giving me problems, had to make an engine thing for that too. Another hint this should be a different scene, doesn't seem like that should be public. I think I need to put a TODO list at the top of things that need fixing/refactoring.
 
+13 FEB 2024
+Part 09 Spells and Ranged Combat
 
+Started off by kicking out some of the TODO list. The console getter is now used instead of passing around the object, I am at least consistent now. Also just about everything outside of main is in the Game namespace now. I am going to be wanting scene classes before I finish. I am thinking I should be SDL ish and have a type enumeration of scene types and a data type per each scene return value in a union, and a status enumeration as well. Some scenes need to call a parent scene before rendering (all the popup/pickers).
+
+Going to mention it early, I see the next section is persistence. I will have to have that gracefully skipped in the emscripten version. I am not going to have a web server running with an API I can call to save/load state. I could probably do it eventually, but I don't want to.
+
+Got the lightning bolt going. It should really be telling you the actual damage instead of the base damage. I had the damage call in the message statement which did do that but then it says it struck the enemies carcass instead of the enemy. I have to look at the code more closely as I type. By the way "father's class" is strange wording, should be the "parent class".
+
+Didn't see a TCODConsole::root->getCharBackground replaced it with TCOD_console_get_char_background. I said no way this isn't deprecated, but it built and ...... it wasn't. Color me surprised.
+
+While the pick seems to work (until it core dumps), it isn't highlighting any cells on the screen, not white cursor either. 
+
+looks like the core dump is on this line Fireball.cpp:15 - if (actor->destructible && !actor->destructible->isDead() && actor->getDistance(x, y) <= range) { gdb wouldn't give much more.
+
+Haven't figured out the seg fault yet, but the lack of highlighting, was a = vs == error (such a newbie error). Not sure if muting the Present() until later helped or not. It did, it flickers without that. I am just going to break Present() out into the main loop of main.cpp. I decided to go with lightGrey for the picker highlight color rather than the brightened color, as brightening didn't seem to do anything.
+
+When a monster is destroyed, it is moved to the beginning of the actors list. I think that is messing up the auto for loop, and causing the seg fault. It took me a long time to reproduce so I going to have to test a while. I think I am just going to have a second list. Add the actors to the list in one pass then cause damage on the 2nd. I think that fixed it. I got three orc with a fireball and no crash.
+
+About to try out changes for the confusion spell, but decided to try the drop command. It doesn't work, because I put in WASD movement previously and the d key is taken. Ooof! I think I am dumping wasd and putting in numpad movement plus diagonals.
+
+Diagonals are now working (test again when I have something to target ... yes it works there too), but drop isn't quite right, I need to send that to back so it doesn't cover up the player. Num Pad Enter should work for picking a target with keyboard...fixed. Looks like confusion does work, as does drop now that I removed WASD. So that concludes part 9.
 

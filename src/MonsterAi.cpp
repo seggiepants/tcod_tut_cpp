@@ -4,7 +4,7 @@
 
 static const int TRACKING_TURNS = 3;
 
-void MonsterAi::update(Actor* owner) {
+void Game::MonsterAi::update(Actor* owner) {
     // Skip if actor is dead.
     if (owner->destructible && owner->destructible->isDead()) return;
 
@@ -20,7 +20,7 @@ void MonsterAi::update(Actor* owner) {
     }
 }
 
-void MonsterAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
+void Game::MonsterAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
     int dx = targetX - owner->x;
     int dy = targetY - owner->y;
     int stepdx = (dx > 0 ? 1: -1);

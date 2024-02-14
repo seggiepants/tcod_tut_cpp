@@ -3,10 +3,12 @@
 
 #include "Destructible.hpp"
 
-class PlayerDestructible : public Destructible {
-    public:
-    PlayerDestructible(float maxHp, float defense, const char* corpseName);
-    void die(Actor* owner);
-};
+namespace Game {
+    class PlayerDestructible : public Destructible {
+        public:
+        PlayerDestructible(float maxHp, float defense, const char* corpseName);
+        void die(Actor* owner);
+    };
+}
 
 #endif

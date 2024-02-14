@@ -8,11 +8,11 @@ static const int BAR_WIDTH = 20;
 static const int MSG_X = BAR_WIDTH + 2;
 static const int MSG_HEIGHT = PANEL_HEIGHT - 1;
 
-Gui::Gui() {
+Game::Gui::Gui() {
     con = new tcod::Console(engine.get_width(), PANEL_HEIGHT);
 }
 
-Gui::~Gui() {
+Game::Gui::~Gui() {
     delete con;
     for(auto& message : log)
     {
@@ -20,7 +20,7 @@ Gui::~Gui() {
     }
     log.clear();
 }
-void Gui::render(tcod::Console& console) {
+void Game::Gui::render() {
     
     // Clear the GUI console
     TCOD_ConsoleTile tile;
@@ -41,10 +41,10 @@ void Gui::render(tcod::Console& console) {
     renderMouseLook();
 
     // Blit it
-    tcod::blit(console, *con, {0, console.get_height() - PANEL_HEIGHT},{0, 0, con->get_width(), con->get_height()}, 1.0f, 1.0f);    
+    tcod::blit(engine.get_console(), *con, {0, engine.get_console().get_height() - PANEL_HEIGHT},{0, 0, con->get_width(), con->get_height()}, 1.0f, 1.0f);    
 }
 
-void Gui::renderBar(int x, int y, int width, const char* name, float value, float maxValue, const TCOD_ColorRGB& barColor, const TCOD_ColorRGB& backColor) {
+void Game::Gui::renderBar(int x, int y, int width, const char* name, float value, float maxValue, const TCOD_ColorRGB& barColor, const TCOD_ColorRGB& backColor) {
 
     tcod::draw_rect(*con->get(), {x, y, width, 1}, (int) ' ', white, backColor, TCOD_BKGND_SET);
 
@@ -58,7 +58,7 @@ void Gui::renderBar(int x, int y, int width, const char* name, float value, floa
     TCOD_console_printf_ex(con->get(), x + width / 2, y, TCOD_BKGND_NONE, TCOD_CENTER, "%s : %g/%g", name, value, maxValue);    
 }
 
-void Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
+void Game::Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
     // build the text
     char buffer[128];
     va_list args;
@@ -88,7 +88,7 @@ void Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
     } while (lineEnd);
 }
 
-void Gui::renderMouseLook() {
+void Game::Gui::renderMouseLook() {
     if (!engine.map->isInFov(engine.mouseX, engine.mouseY)) {
         // if mouse is out of fov, nothing to render
         return;
@@ -110,10 +110,10 @@ void Gui::renderMouseLook() {
     tcod::print(*con, {1, 0}, buffer, lightGrey, black, TCOD_LEFT, TCOD_BKGND_SET);             
 }
 
-Gui::Message::Message(const char * text, const TCOD_ColorRGB& col) : col(col) {
+Game::Gui::Message::Message(const char * text, const TCOD_ColorRGB& col) : col(col) {
     this->text = new std::string(text);
 }
 
-Gui::Message::~Message() {
+Game::Gui::Message::~Message() {
     delete text;
 }

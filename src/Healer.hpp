@@ -3,12 +3,14 @@
 
 #include "Pickable.hpp"
 
-class Healer : public Game::Pickable {
-public:
-    float amount; // how many hp
+namespace Game {
+    class Healer : public Game::Pickable {
+    public:
+        float amount; // how many hp
 
-    Healer(float amouont);
-    bool use(Actor* owner, Actor* wearer);
-};
+        Healer(float amount);
+        bool use(Actor* owner, Actor* wearer);
+    };
+}
 
 #endif
