@@ -4,7 +4,7 @@
 #include "Pickable.hpp"
 #include <SDL.h>
 
-void PlayerAi::update(Actor* owner) {
+void Game::PlayerAi::update(Actor* owner) {
     if (owner->destructible && owner->destructible->isDead()) {
         // Do nothing if dead.
         return;
@@ -13,22 +13,38 @@ void PlayerAi::update(Actor* owner) {
     int dx = 0, dy = 0;
 
     switch(engine.currentKey) {
+    case SDLK_KP_9:
+        dy = -1;
+        dx = 1;
+        break;
     case SDLK_UP:
-    case SDLK_w:
+    case SDLK_KP_8:
         dy = -1;
         break;
-    case SDLK_DOWN:
-    case SDLK_s:
-        dy = 1;
-        break;
-    case SDLK_LEFT:
-    case SDLK_a:
+    case SDLK_KP_7:
+        dy = -1;
         dx = -1;
         break;
     case SDLK_RIGHT:
-    case SDLK_d:
+    case SDLK_KP_6:
         dx = 1;
         break;
+    case SDLK_LEFT:
+    case SDLK_KP_4:
+        dx = -1;
+        break;
+    case SDLK_KP_3:
+        dy = 1;
+        dx = 1;
+        break;
+    case SDLK_DOWN:
+    case SDLK_KP_2:
+        dy = 1;
+        break;
+    case SDLK_KP_1:
+        dy = 1;
+        dx = -1;
+        break;        
     default:
         handleActionKey(owner, engine.currentKey);
         break;
@@ -42,7 +58,7 @@ void PlayerAi::update(Actor* owner) {
     }    
 }
 
-Actor* PlayerAi::chooseFromInventory(Actor* owner) {
+Game::Actor* Game::PlayerAi::chooseFromInventory(Game::Actor* owner) {
     static const int INVENTORY_WIDTH = 50;
     static const int INVENTORY_HEIGHT = 28; // 26 letters in alphabet + 2 for border.
     
@@ -62,7 +78,7 @@ Actor* PlayerAi::chooseFromInventory(Actor* owner) {
         y++;
         shortcut++;
     }    
-    tcod::blit(engine.getConsole(), con, {(engine.getConsole().get_width() - INVENTORY_WIDTH) / 2, (engine.getConsole().get_height() - INVENTORY_HEIGHT) / 2},{0, 0, con.get_width(), con.get_height()}, 1.0f, 1.0f);    
+    tcod::blit(engine.get_console(), con, {(engine.get_console().get_width() - INVENTORY_WIDTH) / 2, (engine.get_console().get_height() - INVENTORY_HEIGHT) / 2},{0, 0, con.get_width(), con.get_height()}, 1.0f, 1.0f);    
     engine.flush();
     SDL_Event event;
     SDL_Keycode currentKey;
@@ -94,7 +110,7 @@ Actor* PlayerAi::chooseFromInventory(Actor* owner) {
     return nullptr;
 }
 
-void PlayerAi::handleActionKey(Actor* owner, int key) {
+void Game::PlayerAi::handleActionKey(Actor* owner, int key) {
     switch(key) {
     case SDLK_g:
         {
@@ -117,10 +133,19 @@ void PlayerAi::handleActionKey(Actor* owner, int key) {
         }
         break;
     case SDLK_i:
-        {            
+        {
             Actor* actor = chooseFromInventory(owner);
             if (actor) {
                 actor->pickable->use(actor, owner);
+                engine.gameStatus = Engine::NEW_TURN;
+            }
+        }
+        break;
+    case SDLK_d: // drop item
+        {
+            Actor* actor = chooseFromInventory(owner);
+            if (actor && actor->pickable) {
+                actor->pickable->drop(actor, owner);
                 engine.gameStatus = Engine::NEW_TURN;
             }
         }
@@ -130,7 +155,7 @@ void PlayerAi::handleActionKey(Actor* owner, int key) {
     }
 }
 
-bool PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
+bool Game::PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
     if (engine.map->isWall(targetX, targetY)) return false;
 
     // look for actors that are still alive to attack

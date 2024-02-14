@@ -3,14 +3,16 @@
 
 #include "Ai.hpp"
 
-class PlayerAi : public Ai {
-    public:
-    void update(Actor* owner);
+namespace Game {
+    class PlayerAi : public Ai {
+        public:
+        void update(Actor* owner);
 
-    protected:
-    bool moveOrAttack(Actor* owner, int targetX, int targetY);
-    void handleActionKey(Actor* owner, int key);
-    Actor* chooseFromInventory(Actor* owner);
-};
+        protected:
+        bool moveOrAttack(Actor* owner, int targetX, int targetY);
+        void handleActionKey(Actor* owner, int key);
+        Actor* chooseFromInventory(Actor* owner);
+    };
+}
 
 #endif

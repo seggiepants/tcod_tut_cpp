@@ -1,15 +1,16 @@
+#include <cmath>
 #include "Actor.hpp"
 #include "Engine.hpp"
 #include "Container.hpp"
 #include "Pickable.hpp"
 
-Actor::Actor(int x, int y, int ch, const char* name, const TCOD_ColorRGBA & col) :
+Game::Actor::Actor(int x, int y, int ch, const char* name, const TCOD_ColorRGBA & col) :
 x(x), y(y), ch(ch), col(col), blocks(true), attacker(nullptr), destructible(nullptr), ai(nullptr),
 pickable(nullptr), container(nullptr) {
     this->name = new std::string(name);
 }
 
-Actor::~Actor() {
+Game::Actor::~Actor() {
     delete this->name;
     if (attacker) delete attacker;
     if (destructible) delete destructible;
@@ -18,12 +19,19 @@ Actor::~Actor() {
     if (container) delete container;
 }
 
-void Actor::render(tcod::Console & console) const {
+void Game::Actor::render() const {
+    tcod::Console& console = engine.get_console();
     TCOD_ConsoleTile& tile = console.at(x, y);
     tile.ch = ch;
     tile.fg = col;    
 }
 
-void Actor::update() {
+void Game::Actor::update() {
     if (ai) ai->update(this);
+}
+
+float Game::Actor::getDistance(int cx, int cy) const {
+    int dx = x - cx;
+    int dy = y - cy;
+    return sqrt((dx * dx) + (dy * dy));
 }
