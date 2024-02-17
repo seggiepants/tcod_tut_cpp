@@ -206,3 +206,45 @@ About to try out changes for the confusion spell, but decided to try the drop co
 
 Diagonals are now working (test again when I have something to target ... yes it works there too), but drop isn't quite right, I need to send that to back so it doesn't cover up the player. Num Pad Enter should work for picking a target with keyboard...fixed. Looks like confusion does work, as does drop now that I removed WASD. So that concludes part 9.
 
+14 FEB 2024
+Part 10.1 Persistence
+
+Happy Valentines.
+
+It looks like I was precognitive switching things to an init method. Actually most of that got moved to a new preInit() call.  
+Not going to try the tcodfiledelete I am sure it must be deprecated since other file handling functions were previously.
+
+Fireball is missing its load function in the tutorial text.
+
+Why do the static factory functions need the namespace prefix on the return value? I don't know but they do. Missed some header declarations here and there too. All that and guess what is deprecated now? TCODZip. The whole thing revolves around TCODZip. Not sure I even want to try to replace it. I am getting virtual destructor warnings all over the place now. This is one of those things where you can't do half measure or parts. It kind of all has to be done all at once to be able to build. So I get it all in and start it up and .... core dump in computeFOV call. Looks like this pointer is null? Looks like you can get call stack in gdb with the where command. That shows Map::computeFOV) that does have a valid this pointer as the last part of my code. Maybe the map object is null. Did I call both pre-init and init (load should be doing the init call if no save file). First guess if you don't load, you never call map.init() which can leave stuff uninitialized. That fixed the no game save mode. But loading a save throws an error trying to make a string with a null pointer in the Actor constructor (thanks to my std::string objects). It seems to save/load numbers, but is failing on colors (not too surprising since I was casting them around), but also strings. I call ->c_str() on each string but maybe there is more. Well I tried saving manually character by character. First a int with string length then character by character (sans null-terminator). I am sure not loading what I saved. Looks like string length is 2036427888. Maybe I do want to swap out the TCODZip library. I tried un-gzip-ing the save file. I can see the strings in there. Am I maybe loading/saving in a different order overall?
+
+
+With great effort, time, and energy, I decided to switch to the cereal serialization library recommended by the deprecation notice. Never did get the TCODZip functions working, I think I must have had something out of order. I did find a player save call I forgot to put in. Anyway, I finally got it building, but then I got linker errors. Some searching on Stack Overflow and I found out that template functions have to be in the header file or you get bad linker errors oy! I had a horrible time with the list of Player* variables. Cereal wants shared_ptr which I admittedly pretty much never used before. That wasn't fun. Anyway, it is getting late, I may just continue tomorrow.
+
+This is more miserable than the tutorial suggested and the tutorial sure didn't like this part.
+
+15 FEB 2024
+Well still working on things. Just about everything is a shared pointer or some other ugly nonsense. I can't seem to save the gui or the actors list. I tried making the actors list a dynamically allocated object. Not sure if that helped or even works (haven't had a successful compile for quite some time), but I am not changing it back unless required.
+
+I finally got something compiling with the gui and actors commented out. It seems like there is something in the actor. So I re-enable it with nothing but the x, y coordinate, then make and add the next field 1 by 1 until I get to an error, and the first one is name. I did a shared_ptr<std::string>, shouldn't that work? I get a raw pointer error if it is just a std::string*. Cereal demands no raw pointers be serialized which is just about everything in the tutorial. Will try changing it to just a std::string, seems like that works.
+
+I want to take a moment to say just how horrible error messages are for templated function problems. They are awful. 
+Currently up to Destructible failing to save, is it another string? Changing corpseName from std::shared_ptr<std::string> to std::string, lets see if that helps. Errr... nope. Maybe removing the emscripten guards will help. Nope. Maybe take out player/monster destructible serializers, they don't do anything but call the parent class serializer. Nope. Looks like I skipped attacker, so save/load that first. Wait a minute is the only reason it isn't working because I said Attacker instead of Game::Attacker. Nope.
+Is it because I don't have a parameter-less constructor? Anyway, I am going to try saving/loading somewhat manually, hope that works.
+
+I am still getting all kinds of errors or I guess I should say warnings about forward class references. I got it to a point where I can almost save part of it. However, it only seems to save the base class of the derived classes, and loading doesn't work. I am close to just rolling my own. I wanted this to work, but it just won't do it.
+
+I am wondering if a lack of parameterless constructors or copy constructors might be causing things to break. I may try adding those tomorrow to all of the storage classes. 
+
+I think I have everything saving. If it weren't for the derived classes saving as base class it might actually work. The save file looks half decent at least. Actually, if I remember GDB seemed to be failing on a name string. One more day I guess
+
+16 FEB 2024
+Yeah day 3. Ok, so still having problems. I finally decided that this just isn't working with Cereal. The virtual functions and heirarchy and such just wasn't playing nice with the template functions. So after trying to flatten things a big (Fireball no longer has Lightning Bolt as a parent). I finally just game up on Cereal, and decided to roll my own. That took a whole bunch more time.
+
+I wanted to do everything in the C++ iostream way but it doesn't parse as nice as the old C way. Still I did it anyway. Turns out if you put a comma after every number, it will parse well enough to work for what I need it for. After too many hours I finally got something working. It is miserable debugging with gdb by the way. So save/load seems to be working but....... I think I have things spawning in the walls now. Two things in the previous run. Also if you kill off everything you are kind of just stuck in an empty game forever. I think future parts will take care of that.
+
+One more thing I want to do is try to use ZLIB to compress the save file. It's only 5kb but still. Or should I just skip it, I have been on this step wayyyyy tooooo loooong.
+
+Ok, did another run went and killed everything saved some potions to see if they were in the wall when I came back. Save. Reload. All the visibility is wrong and I am stuck in a wall or something and can't move. Ok, needs more work.
+
+

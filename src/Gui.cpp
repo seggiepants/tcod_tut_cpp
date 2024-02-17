@@ -16,7 +16,7 @@ Game::Gui::~Gui() {
     delete con;
     for(auto& message : log)
     {
-        delete message;
+        message.reset();
     }
     log.clear();
 }
@@ -34,7 +34,7 @@ void Game::Gui::render() {
 
     int y = 1;
     for(auto& message : log) {
-        tcod::print(*con, {MSG_X, y}, message->text->c_str(), message->col, black, TCOD_LEFT, TCOD_BKGND_SET);        
+        tcod::print(*con, {MSG_X, y}, message->text.c_str(), message->col, black, TCOD_LEFT, TCOD_BKGND_SET);        
         y++;
     }
 
@@ -72,9 +72,9 @@ void Game::Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
     do {
         // make room for the new message
         if (log.size() >= MSG_HEIGHT) {
-            Message* top = log.front();
+            std::shared_ptr<Message> top = log.front();
             log.pop_front();
-            delete top;
+            top.reset();
         }        
 
         lineEnd = std::strchr(lineBegin, '\n');
@@ -82,7 +82,7 @@ void Game::Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
         if (lineEnd) {
             *lineEnd = '\0';
         }
-        log.push_back(new Message(lineBegin, col));
+        log.push_back(std::make_shared<Message>(lineBegin, col));
         // go to next line;
         lineBegin = lineEnd + 1;
     } while (lineEnd);
@@ -96,24 +96,66 @@ void Game::Gui::renderMouseLook() {
     std::string buffer;
     bool first = true;
     
-    for(auto const & actor: engine.actors ) {
+    for(auto const & actor: *engine.actors ) {
         if (actor->x == engine.mouseX && actor->y == engine.mouseY) {
             if (!first) {
                 buffer.append(", ");            
             } else {
                 first = false;
             }
-            buffer.append(actor->name->c_str());
+            buffer.append(actor->name.c_str());
         }
     }
     
     tcod::print(*con, {1, 0}, buffer, lightGrey, black, TCOD_LEFT, TCOD_BKGND_SET);             
 }
 
+void Game::Gui::load(std::ifstream& stream) {
+    char delim = ',';
+    int countMessages = 0;
+    log.clear();
+    stream >> countMessages >> delim;
+    for(int i = 0; i < countMessages;++i) {
+        std::shared_ptr<Game::Gui::Message> message = std::make_shared<Game::Gui::Message>("", white);
+        message->load(stream);
+        log.push_back(message);
+    }
+}
+
+void Game::Gui::save(std::ofstream& stream) {
+    const char delim = ',';
+    stream << log.size() << delim;
+    for(auto& message : log) {
+        message->save(stream);
+    }
+}
+
+
+
+Game::Gui::Message::Message() : text(nullptr), col({255, 255, 255}) {}
+
 Game::Gui::Message::Message(const char * text, const TCOD_ColorRGB& col) : col(col) {
-    this->text = new std::string(text);
+    this->text.assign(text);
 }
 
 Game::Gui::Message::~Message() {
-    delete text;
+    text.clear();
 }
+
+void Game::Gui::Message::load(std::ifstream& stream) {
+    char delim = ',';
+    stream >> col.r >> delim >> col.g >> delim >> col.b >> delim;
+    int strLen;
+    stream >> strLen >> delim;
+    char buffer[strLen + 1];
+    stream.read(buffer, strLen);
+    buffer[strLen] = '\0';
+    stream >> delim;
+    text.assign(buffer);
+}
+
+void Game::Gui::Message::save(std::ofstream& stream) {
+    const char delim = ',';
+    stream << col.r << delim << col.g << delim << col.b << delim << text.size() << delim << text.c_str() << delim;    
+}
+

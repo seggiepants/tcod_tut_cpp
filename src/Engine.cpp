@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <SDL.h>
 #include "Engine.hpp"
@@ -40,24 +41,39 @@ TCOD_ColorRGB orange = {255, 127, 0};
 TCOD_ColorRGB red = {255, 0, 0};
 TCOD_ColorRGB white = {255, 255, 255};
 
+const char* SAVE_FILENAME = "game.sav";
+
 
 Game::Engine::Engine() : gameStatus(STARTUP), fovRadius(10), currentKey((SDL_Keycode)0) {
+    player = nullptr;
     map = nullptr;
     gui = nullptr;
     initialized = false;
+    actors = std::make_shared<std::list<std::shared_ptr<Game::Actor>>>();
 }
 
 Game::Engine::~Engine() {
-    for(auto const & actor : actors){
-        delete actor;
-    }
-    actors.clear();
-    if (map) delete map;
-    if (gui) delete gui;
+    destroy();
+    actors.reset();
 }
 
-void Game::Engine::init(int argc, char** argv, int screenWidth, int screenHeight) {
-    if (initialized)
+void Game::Engine::destroy() {
+    actors->clear();    
+    player.reset();
+
+    if (map) {
+        delete map;
+        map = nullptr;
+    }
+
+    if (gui != nullptr && gui.get()) {
+        gui.reset();
+        gui = nullptr;
+    }
+}
+
+void Game::Engine::preInit(int argc, char** argv, int screenWidth, int screenHeight) {
+if (initialized)
         return;
 
     this->screenWidth = screenWidth;
@@ -81,23 +97,114 @@ void Game::Engine::init(int argc, char** argv, int screenWidth, int screenHeight
         console = tcod::Console{screenWidth, screenHeight};
         params.console = console.get();
 
-        context = tcod::Context(params);    
-        player = new Actor(console.get_width() / 2, console.get_height() / 2, '@', "player", WHITE);
-        player->destructible = new PlayerDestructible(30, 2, "your cadaver");
-        player->attacker = new Attacker(5);
-        player->ai = new PlayerAi();
-        player->container = new Game::Container(26);
-        gui = new Gui();
-        map = new Map(console.get_width(), console.get_height() - gui->get_height());
-        actors.push_back(player); // Make sure player is on-top.
-        gui->message(red, "Welcome stranger!\nPrepare to perish in the Tombs of the Ancient Kings.");
-        initialized = true;
+        context = tcod::Context(params);   
         gameStatus = STARTUP;
-        running = true;
+        running = false;
+        initialized = true;
     } catch (const std::exception& exc) {
         std::cerr << exc.what() << "\n";
         throw;
     }
+}
+
+void Game::Engine::init() {
+    destroy(); // Make sure everything is clean
+
+    player = std::make_shared<Game::Actor>(console.get_width() / 2, console.get_height() / 2, '@', "player", WHITE);
+    player->destructible = new PlayerDestructible(30, 2, "your cadaver");
+    player->attacker = new Attacker(5);
+    player->ai = new PlayerAi();
+    player->container = std::make_shared<Game::Container>(26);
+    gui = std::make_shared<Gui>();
+    map = new Map(console.get_width(), console.get_height() - gui->get_height());
+    map->init(true);
+    actors->push_back(player); // Make sure player is on-top.
+    gui->message(red, "Welcome stranger!\nPrepare to perish in the Tombs of the Ancient Kings.");
+    running = true;
+}
+
+void Game::Engine::load() {
+#ifndef __EMSCRIPTEN__
+    std::filesystem::path path(SAVE_FILENAME);
+    if (std::filesystem::exists(path)) {
+        std::ifstream stream(SAVE_FILENAME, std::ios::binary | std::ios::in);
+        // cereal::JSONInputArchive archive(fs);
+
+        destroy();
+
+        // load the map
+        int width, height;
+        // archive(width, height);
+        char delim = ',';
+        stream >> width >> delim >> height >> delim;
+        map = new Map(width, height);
+        map->width = width;
+        map->height = height;
+        map->init(false);
+        map->load(stream);
+        //archive(actors);
+        int actorCount = 0;
+        stream >> actorCount >> delim;
+        for(int i = 0; i < actorCount; ++i) {
+            std::shared_ptr<Game::Actor> currentActor = std::make_shared<Game::Actor>();
+            currentActor->load(stream);
+            stream >> delim >> delim;
+            actors->push_back(currentActor);
+        }
+        
+        // reference the player
+        for(auto const & actor: *actors) {
+            if (actor->ch == (int) '@') {
+                player = actor;
+                break;
+            }
+        }
+        gui = std::make_shared<Gui>();
+        gui->load(stream);
+
+        stream.close();
+        running = true;
+        
+    } else {
+        engine.init();
+    }
+#else
+    engine.init();
+#endif
+}
+
+void Game::Engine::save() {
+#ifndef __EMSCRIPTEN__    
+    const char delim = ',';
+    if (!player) return;
+    if (!player->destructible) return;    
+
+    if (player->destructible->isDead()) {
+        std::filesystem::path path(SAVE_FILENAME);
+        if (std::filesystem::exists(path)) {
+            std::filesystem::remove(path);
+        }
+    } else {
+        std::ofstream stream(SAVE_FILENAME, std::ios::binary | std::ios::out);
+
+        // save the map first
+        stream << map->width << delim << map->height << delim;
+        map->save(stream);    
+        
+        //archive(actors);
+        
+        stream << actors->size() << delim;
+        for(auto const& actor : *actors) {
+            actor->save(stream);
+            stream << '~' << delim;
+        }
+        
+        gui->save(stream);
+
+        stream.flush();
+        stream.close();
+    }
+#endif
 }
 
 void Game::Engine::update() {
@@ -150,7 +257,7 @@ void Game::Engine::update() {
 
     player->update();
     if (gameStatus == NEW_TURN) {
-        for(auto const & actor : actors) {
+        for(auto const & actor : *actors) {
             if (actor != player) {
                 actor->update();
             }
@@ -161,7 +268,7 @@ void Game::Engine::update() {
 void Game::Engine::render() {
     console.clear();
     map->render();
-    for(auto const & actor : actors) {
+    for(auto const & actor : *actors) {
         if (map->isInFov(actor->x, actor->y)) {
             actor->render();
         }
@@ -177,7 +284,6 @@ void Game::Engine::render() {
 }
 
 bool Game::Engine::pickATile(int* x, int* y, float maxRange) {
-    const float brighten = 1.2f;
     SDL_Event event;
     int mouseX = player->x; // This might fail on chromebook.
     int mouseY = player->y; // going to add cursor keys as a fall-back.
@@ -192,8 +298,7 @@ bool Game::Engine::pickATile(int* x, int* y, float maxRange) {
         for(int cy = 0; cy < map->height; ++cy) {
             for (int cx = 0; cx < map->width; ++cx) {
                 if (map->isInFov(cx, cy) && (maxRange == 0.0f || player->getDistance(cx, cy) < maxRange)) {
-                    TCOD_ColorRGB clr = TCOD_console_get_char_background(console.get(), cx, cy);
-                    /*
+                    /*TCOD_ColorRGB clr = TCOD_console_get_char_background(console.get(), cx, cy);
                     clr.r *= brighten;
                     clr.g *= brighten;
                     clr.b *= brighten;
@@ -298,17 +403,17 @@ bool Game::Engine::pickATile(int* x, int* y, float maxRange) {
     return false;
 }
 
-void Game::Engine::sendToBack(Actor* actor) {
-    actors.remove(actor);
-    actors.push_front(actor);
+void Game::Engine::sendToBack(std::shared_ptr<Game::Actor> actor) {
+    actors->remove(actor);
+    actors->push_front(actor);
 }
 
 Game::Actor* Game::Engine::getClosestMonster(int x, int y, float range) const {
-    Game::Actor* closest = nullptr;
+    std::shared_ptr<Game::Actor> closest = nullptr;
 
     float bestDistance = 1E6f; // start with a really big number.
     
-    for(auto const & actor : actors){
+    for(auto const & actor : *actors){
         if (actor != player && actor->destructible && !actor->destructible->isDead()) {
             float distance = actor->getDistance(x, y);
             if (distance < bestDistance && (distance <= range || range == 0.0f)) {
@@ -318,13 +423,22 @@ Game::Actor* Game::Engine::getClosestMonster(int x, int y, float range) const {
         }
     }
 
-    return closest;
+    return closest.get();
 }
 
-Game::Actor* Game::Engine::getActor(int x, int y) const {
-    for(auto const & actor : actors){
+std::shared_ptr<Game::Actor> Game::Engine::getActor(int x, int y) const {
+    for(auto const & actor : *actors){
         if (actor->x == x && actor->y == y && actor->destructible && !actor->destructible->isDead()) {
             return actor;
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<Game::Actor> Game::Engine::lookupActor(Actor* actor)  {
+    for(auto const& candidate : *actors) {
+        if (candidate.get() == actor) {
+            return candidate;
         }
     }
     return nullptr;

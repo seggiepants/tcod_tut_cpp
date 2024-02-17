@@ -128,3 +128,7 @@ bin
 vcpkg-bootstrap.log
 vcpkg-manifest-install.log
 vcpkg_installed/
+
+# output files
+game.sav
+

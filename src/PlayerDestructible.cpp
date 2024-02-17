@@ -10,3 +10,7 @@ void Game::PlayerDestructible::die(Actor* owner) {
     Destructible::die(owner);
     engine.gameStatus = Engine::DEFEAT;
 }
+
+void Game::PlayerDestructible::save(std::ofstream& stream) {
+    Destructible::save(stream);
+}

@@ -14,20 +14,26 @@ namespace Game {
     public:
         Engine();
         ~Engine();
-        void init(int argc, char** argv, int screenWidth, int screenHeight);
+        void preInit(int argc, char** argv, int screenWidth, int screenHeight);
+        void destroy();
+        void init();
+        void load();
+        void save();
         void update();
         void render();
         void present() {context.present(console);};
-        Actor* getActor(int x, int y) const;
+        std::shared_ptr<Game::Actor> getActor(int x, int y) const;
         bool isRunning() { return running; }
         bool pickATile(int* x, int* y, float maxRange = 0.0f);
         void Stop() { running = false;}
-        void sendToBack(Actor* actor);
+        void sendToBack(std::shared_ptr<Game::Actor> actor);
         void flush() { context.present(console); }
         tcod::Console& get_console() { return console; }; 
         Actor* getClosestMonster(int x, int y, float range) const;
+        std::shared_ptr<Actor> lookupActor(Actor* actor);
 
-        std::list<Actor *> actors;
+        std::shared_ptr<std::list<std::shared_ptr<Game::Actor>>> actors;
+
         enum GameStatus {
             STARTUP,
             IDLE,
@@ -35,9 +41,9 @@ namespace Game {
             VICTORY,
             DEFEAT
         } gameStatus;
-        Actor* player;
+        std::shared_ptr<Actor> player;
         Map* map;
-        Gui* gui;
+        std::shared_ptr<Gui> gui;
         int fovRadius;
         SDL_Keycode currentKey;
         int get_width() { return screenWidth; }
