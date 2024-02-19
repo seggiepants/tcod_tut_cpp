@@ -33,8 +33,6 @@ namespace Game {
 #endif
 
 bool Game::BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
-    bool withActors = (bool)userData;
-
     if (node->isLeaf()) {
         int x, y, w, h;
 
@@ -43,7 +41,7 @@ bool Game::BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
         h = map.rng->getInt(ROOM_MIN_SIZE, node->h - 2);
         x = map.rng->getInt(node->x + 1, node->x + node->w -  w - 1);
         y = map.rng->getInt(node->y + 1, node->y + node->h -  h - 1);
-        map.createRoom(this->roomNum == 0, x, y, x + w - 1, y + h - 1, withActors);
+        map.createRoom(this->roomNum == 0, x, y, x + w - 1, y + h - 1);
 
         if (roomNum != 0) {
             // dig a corridor from the last room
@@ -58,13 +56,12 @@ bool Game::BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
 }
 
 Game::Map::Map(int width, int height) : width(width), height(height) {
-    seed = TCODRandom::getInstance()->getInt(0, 0x7FFFFFFF);
     tiles = nullptr;
     map = nullptr;
 } 
 
-void Game::Map::init(bool withActors) {
-    rng = new TCODRandom(seed, TCOD_RNG_CMWC);
+void Game::Map::init(bool generateRooms) {
+    rng = new TCODRandom();
     
     if (tiles) delete[] tiles;
 
@@ -72,17 +69,18 @@ void Game::Map::init(bool withActors) {
     
     if (map) delete map;
     map = new TCODMap(width, height);
-    TCODBsp bsp(0, 0, width, height);
-    bsp.splitRecursive(rng, 8, NODE_MIN_SIZE, NODE_MIN_SIZE, 1.5f, 1.5f);
-    BspListener listener(*this);
-    bsp.traverseInvertedLevelOrder(&listener, (void*)withActors);
+
+    if (generateRooms) {
+        TCODBsp bsp(0, 0, width, height);
+        bsp.splitRecursive(rng, 8, NODE_MIN_SIZE, NODE_MIN_SIZE, 1.5f, 1.5f);
+        BspListener listener(*this);
+        bsp.traverseInvertedLevelOrder(&listener, nullptr);
+    }
 }
 
 Game::Map::~Map() {
-#ifndef __EMSCRIPTEN__
     delete[] tiles;
     delete map;
-#endif
 }
 
 bool Game::Map::isWall(int x, int y) const {
@@ -137,29 +135,28 @@ void Game::Map::addItem(int x, int y) {
 
     int dice = rng->getInt(0, 100);
     if (dice < 70) { 
-        std::shared_ptr<Actor> healthPotion = std::make_shared<Actor>(x, y, '!', "health potion", VIOLET);
-
+        Actor* healthPotion = new Actor(x, y, '!', "health potion", VIOLET);
         healthPotion->blocks = false;
-        healthPotion->pickable = std::make_shared<Healer>(4);
-        engine.actors->push_back(healthPotion);
+        healthPotion->pickable = new Healer(4);
+        engine.actors.push_back(healthPotion);
     } else if (dice < 70 + 10) {
         // create a scroll of lightning bolt.
-        std::shared_ptr<Actor> scrollOfLightningBolt = std::make_shared<Actor>(x, y, (int)'#', "scroll of lightning bolt", LIGHT_YELLOW);
+        Actor* scrollOfLightningBolt = new Actor(x, y, (int)'#', "scroll of lightning bolt", LIGHT_YELLOW);
         scrollOfLightningBolt->blocks = false;
-        scrollOfLightningBolt->pickable = std::make_shared<LightningBolt>(5, 20);
-        engine.actors->push_back(scrollOfLightningBolt);
+        scrollOfLightningBolt->pickable = new LightningBolt(5, 20);
+        engine.actors.push_back(scrollOfLightningBolt);
     } else if (dice < 70 + 10 + 10) {
         // create a scroll of fireball
-        std::shared_ptr<Actor> scrollOfFireball = std::make_shared<Actor>(x, y, (int)'#', "scroll of fireball", LIGHT_YELLOW);
+        Actor* scrollOfFireball = new Actor(x, y, (int)'#', "scroll of fireball", LIGHT_YELLOW);
         scrollOfFireball->blocks = false;
-        scrollOfFireball->pickable = std::make_shared<Fireball>(3, 12);
-        engine.actors->push_back(scrollOfFireball);
+        scrollOfFireball->pickable = new Fireball(3, 12);
+        engine.actors.push_back(scrollOfFireball);
     } else { //if (dice < 70 + 10 + 10 + 10) {
         // create a scroll of confusion
-        std::shared_ptr<Actor> scrollOfConfusion = std::make_shared<Actor>(x, y, (int)'#', "scroll of confusion", LIGHT_YELLOW);
+        Actor* scrollOfConfusion = new Actor(x, y, (int)'#', "scroll of confusion", LIGHT_YELLOW);
         scrollOfConfusion->blocks = false;
-        scrollOfConfusion->pickable = std::make_shared<Confuser>(10, 8);
-        engine.actors->push_back(scrollOfConfusion);
+        scrollOfConfusion->pickable = new Confuser(10, 8);
+        engine.actors.push_back(scrollOfConfusion);
     }
 }
 
@@ -168,20 +165,20 @@ void Game::Map::addMonster(int x, int y) {
 
     if (rng->getInt(0, 100) < 80) {
         // Create an orc
-        std::shared_ptr<Actor> orc = std::make_shared<Actor>(x, y, 'o', "Orc", COLOR_ORC);
+        Actor* orc = new Actor(x, y, 'o', "Orc", COLOR_ORC);
         orc->destructible = new MonsterDestructible(10, 0, "dead orc");
         orc->attacker = new Attacker(3);
         orc->ai = new MonsterAi();
-        engine.actors->push_back(orc);
+        engine.actors.push_back(orc);
     }
     else 
     {
         // Create a troll
-        std::shared_ptr<Actor> troll = std::make_shared<Actor>(x, y, 'T', "Troll", COLOR_TROLL);
+        Actor* troll = new Actor(x, y, 'T', "Troll", COLOR_TROLL);
         troll->destructible = new MonsterDestructible(16, 1, "troll carcass");
         troll->attacker = new Attacker(4);
         troll->ai = new MonsterAi();
-        engine.actors->push_back(troll);
+        engine.actors.push_back(troll);
     }
 }
 
@@ -191,7 +188,7 @@ bool Game::Map::canWalk(int x, int y) const {
         return false;
     }
 
-    for(auto const & actor : *engine.actors) {
+    for(auto const & actor : engine.actors) {
         if (actor->blocks && actor->x == x && actor->y == y) {
             // there is a blocking actor here. cannot walk.
             return false;
@@ -215,13 +212,9 @@ void Game::Map::dig(int x1, int y1, int x2, int y2) {
     }
 }
 
-void Game::Map::createRoom(bool first, int x1, int y1, int x2, int y2, bool withActors) {
+void Game::Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
     dig(x1, y1, x2, y2);
     
-    if (!withActors) {
-        return;
-    }
-
     if (first) {
         engine.player->x = (x1 + x2) / 2;
         engine.player->y = (y1 + y2) / 2;        
@@ -251,20 +244,38 @@ void Game::Map::createRoom(bool first, int x1, int y1, int x2, int y2, bool with
 
 void Game::Map::load(std::ifstream& stream) {
     char delim = ',';
-    stream >> seed >> delim;
     init(false);
-    char buffer[width * height];
+    char buffer[width * height];    
+    stream.read(buffer, width * height);
+    int rowIdx;
+    for(int j = 0; j < height; j++) {
+        rowIdx = width * j;
+        for(int i = 0; i < width; i++) {
+            bool bWalkable = buffer[rowIdx + i] == '1' ? true : false;
+            map->setProperties(i, j, bWalkable, bWalkable);
+        }
+    }
+    stream >> delim;
     stream.read(buffer, width * height);
     for(int i = 0; i < width * height; i++) {
-        tiles[i].explored = buffer[i] == '1';
+        tiles[i].explored = (buffer[i] == '1');
     }
     stream >> delim;
 }
 
 void Game::Map::save(std::ofstream& stream) {
     const char delim = ',';
-    stream << seed << delim;
     char buffer[width * height];
+    int rowIdx;
+    for(int j = 0; j < height; j++) {
+        rowIdx = width * j;
+        for(int i = 0; i < width; i++) {
+            buffer[rowIdx + i] = map->isWalkable(i, j) ? '1' : '0';
+        }
+    }
+    stream.write(buffer, width * height);
+    stream << delim;
+
     for(int i = 0; i < width * height; i++) {
         buffer[i] = tiles[i].explored ? '1' : '0';
     }

@@ -53,7 +53,7 @@ void Game::PlayerAi::update(Actor* owner) {
         dx = -1;
         break;        
     default:
-        handleActionKey(engine.lookupActor(owner), engine.currentKey);
+        handleActionKey(owner, engine.currentKey);
         break;
     }
     
@@ -65,7 +65,7 @@ void Game::PlayerAi::update(Actor* owner) {
     }    
 }
 
-std::shared_ptr<Game::Actor> Game::PlayerAi::chooseFromInventory(std::shared_ptr<Actor> owner) {
+Game::Actor* Game::PlayerAi::chooseFromInventory(Actor* owner) {
     static const int INVENTORY_WIDTH = 50;
     static const int INVENTORY_HEIGHT = 28; // 26 letters in alphabet + 2 for border.
     
@@ -104,7 +104,7 @@ std::shared_ptr<Game::Actor> Game::PlayerAi::chooseFromInventory(std::shared_ptr
                 {
                     int index = currentKey - SDLK_a;
                     if (index >= 0 && (size_t)index < owner->container->inventory.size()) {
-                        std::list<std::shared_ptr<Actor>>::iterator iter = owner->container->inventory.begin();
+                        std::list<Actor*>::iterator iter = owner->container->inventory.begin();
                         std::advance(iter, index);
                         return (*iter);
                     }
@@ -117,14 +117,14 @@ std::shared_ptr<Game::Actor> Game::PlayerAi::chooseFromInventory(std::shared_ptr
     return nullptr;
 }
 
-void Game::PlayerAi::handleActionKey(std::shared_ptr<Actor> owner, int key) {
+void Game::PlayerAi::handleActionKey(Actor* owner, int key) {
     switch(key) {
     case SDLK_g:
         {
             bool found = false;
-            for(auto const & actor : *engine.actors){
+            for(auto const & actor : engine.actors){
                 if (actor->pickable && actor->x == owner->x && actor->y == owner-> y) {
-                    if (actor->pickable->pick(actor, owner.get())) {
+                    if (actor->pickable->pick(actor, owner)) {
                         found = true;
                         engine.gui->message(lightGrey, "You picked up the %s.", actor->name.c_str());
                         break;
@@ -141,18 +141,18 @@ void Game::PlayerAi::handleActionKey(std::shared_ptr<Actor> owner, int key) {
         break;
     case SDLK_i:
         {
-            std::shared_ptr<Actor> actor = chooseFromInventory(owner);
+            Actor* actor = chooseFromInventory(owner);
             if (actor) {
-                actor->pickable->use(actor, owner.get());
+                actor->pickable->use(actor, owner);
                 engine.gameStatus = Engine::NEW_TURN;
             }
         }
         break;
     case SDLK_d: // drop item
         {
-            std::shared_ptr<Actor> actor = chooseFromInventory(owner);
+            Actor* actor = chooseFromInventory(owner);
             if (actor && actor->pickable) {
-                actor->pickable->drop(actor, owner.get());
+                actor->pickable->drop(actor, owner);
                 engine.gameStatus = Engine::NEW_TURN;
             }
         }
@@ -166,20 +166,20 @@ bool Game::PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
     if (engine.map->isWall(targetX, targetY)) return false;
 
     // look for actors that are still alive to attack
-    for (auto & actor : *engine.actors) {
-        if (actor.get() != owner &&  // Make sure we don't attack ourself.
+    for (auto & actor : engine.actors) {
+        if (actor != owner &&  // Make sure we don't attack ourself.
             owner->attacker && // Make sure we have an attacker
             actor->destructible &&  // Make sure we are attacking something that can be destroyed
             !actor->destructible->isDead() && // and that it isn't already dead
             actor->x == targetX && // and it is where we are attacking.
             actor->y == targetY) {
-            owner->attacker->attack(owner, actor.get());
+            owner->attacker->attack(owner, actor);
             return false; // exit after attacking so we don't also move
         }
     }
 
     // look for corpses
-    for (auto const & actor : *engine.actors) {
+    for (auto const & actor : engine.actors) {
         bool corpseOrItem = ((actor->destructible && actor->destructible->isDead()) || actor->pickable);
         if (corpseOrItem && actor->x == targetX && actor->y == targetY) {
             engine.gui->message(lightGrey, "There's a %s here", actor->name.c_str());

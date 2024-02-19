@@ -51,8 +51,8 @@ void Game::Destructible::die(Actor* owner) {
     owner->name.assign(corpseName.c_str()); 
     owner->blocks = false;
     // Make sure corpses are drawn before living actors
-    for(auto const & actor : *engine.actors) {
-        if (actor.get() == owner) {
+    for(auto const & actor : engine.actors) {
+        if (actor == owner) {
             engine.sendToBack(actor);
             break;
         }
@@ -75,10 +75,11 @@ void Game::Destructible::load(std::ifstream& stream) {
     char delim = ',';
     int bufferSize;
     stream >> maxHp >> delim >> hp >> delim >> defense >> delim >> bufferSize >> delim;
-    char buffer[bufferSize + 1];
+    char* buffer = new char[bufferSize + 1];
     stream.read(buffer, bufferSize);
     buffer[bufferSize] = '\0';
     corpseName.assign(buffer);
+    delete[] buffer;
     stream >> delim;
 }
 

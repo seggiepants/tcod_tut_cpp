@@ -49,25 +49,26 @@ Game::Engine::Engine() : gameStatus(STARTUP), fovRadius(10), currentKey((SDL_Key
     map = nullptr;
     gui = nullptr;
     initialized = false;
-    actors = std::make_shared<std::list<std::shared_ptr<Game::Actor>>>();
 }
 
 Game::Engine::~Engine() {
     destroy();
-    actors.reset();
 }
 
 void Game::Engine::destroy() {
-    actors->clear();    
-    player.reset();
+    for(auto& actor : actors) {
+        delete actor;
+    }
+    actors.clear();    
+    player = nullptr;
 
     if (map) {
         delete map;
         map = nullptr;
     }
 
-    if (gui != nullptr && gui.get()) {
-        gui.reset();
+    if (gui != nullptr) {
+        delete gui;
         gui = nullptr;
     }
 }
@@ -110,15 +111,15 @@ if (initialized)
 void Game::Engine::init() {
     destroy(); // Make sure everything is clean
 
-    player = std::make_shared<Game::Actor>(console.get_width() / 2, console.get_height() / 2, '@', "player", WHITE);
+    player = new Actor(console.get_width() / 2, console.get_height() / 2, '@', "player", WHITE);
     player->destructible = new PlayerDestructible(30, 2, "your cadaver");
     player->attacker = new Attacker(5);
     player->ai = new PlayerAi();
-    player->container = std::make_shared<Game::Container>(26);
-    gui = std::make_shared<Gui>();
+    player->container = new Container(26);
+    gui = new Gui();
     map = new Map(console.get_width(), console.get_height() - gui->get_height());
     map->init(true);
-    actors->push_back(player); // Make sure player is on-top.
+    actors.push_back(player); // Make sure player is on-top.
     gui->message(red, "Welcome stranger!\nPrepare to perish in the Tombs of the Ancient Kings.");
     running = true;
 }
@@ -141,25 +142,27 @@ void Game::Engine::load() {
         map->width = width;
         map->height = height;
         map->init(false);
+        gui = new Gui();
+        map = new Map(console.get_width(), console.get_height() - gui->get_height());
         map->load(stream);
-        //archive(actors);
+        
         int actorCount = 0;
         stream >> actorCount >> delim;
         for(int i = 0; i < actorCount; ++i) {
-            std::shared_ptr<Game::Actor> currentActor = std::make_shared<Game::Actor>();
+            Actor* currentActor = new Actor();
             currentActor->load(stream);
             stream >> delim >> delim;
-            actors->push_back(currentActor);
+            actors.push_back(currentActor);
         }
         
         // reference the player
-        for(auto const & actor: *actors) {
+        for(auto const & actor: actors) {
             if (actor->ch == (int) '@') {
                 player = actor;
                 break;
             }
         }
-        gui = std::make_shared<Gui>();
+
         gui->load(stream);
 
         stream.close();
@@ -193,8 +196,8 @@ void Game::Engine::save() {
         
         //archive(actors);
         
-        stream << actors->size() << delim;
-        for(auto const& actor : *actors) {
+        stream << actors.size() << delim;
+        for(auto const& actor : actors) {
             actor->save(stream);
             stream << '~' << delim;
         }
@@ -257,7 +260,7 @@ void Game::Engine::update() {
 
     player->update();
     if (gameStatus == NEW_TURN) {
-        for(auto const & actor : *actors) {
+        for(auto const & actor : actors) {
             if (actor != player) {
                 actor->update();
             }
@@ -268,7 +271,7 @@ void Game::Engine::update() {
 void Game::Engine::render() {
     console.clear();
     map->render();
-    for(auto const & actor : *actors) {
+    for(auto const & actor : actors) {
         if (map->isInFov(actor->x, actor->y)) {
             actor->render();
         }
@@ -403,17 +406,17 @@ bool Game::Engine::pickATile(int* x, int* y, float maxRange) {
     return false;
 }
 
-void Game::Engine::sendToBack(std::shared_ptr<Game::Actor> actor) {
-    actors->remove(actor);
-    actors->push_front(actor);
+void Game::Engine::sendToBack(Actor* actor) {
+    actors.remove(actor);
+    actors.push_front(actor);
 }
 
 Game::Actor* Game::Engine::getClosestMonster(int x, int y, float range) const {
-    std::shared_ptr<Game::Actor> closest = nullptr;
+    Actor* closest = nullptr;
 
     float bestDistance = 1E6f; // start with a really big number.
     
-    for(auto const & actor : *actors){
+    for(auto const & actor : actors){
         if (actor != player && actor->destructible && !actor->destructible->isDead()) {
             float distance = actor->getDistance(x, y);
             if (distance < bestDistance && (distance <= range || range == 0.0f)) {
@@ -423,22 +426,13 @@ Game::Actor* Game::Engine::getClosestMonster(int x, int y, float range) const {
         }
     }
 
-    return closest.get();
+    return closest;
 }
 
-std::shared_ptr<Game::Actor> Game::Engine::getActor(int x, int y) const {
-    for(auto const & actor : *actors){
+Game::Actor* Game::Engine::getActor(int x, int y) const {
+    for(auto const & actor : actors){
         if (actor->x == x && actor->y == y && actor->destructible && !actor->destructible->isDead()) {
             return actor;
-        }
-    }
-    return nullptr;
-}
-
-std::shared_ptr<Game::Actor> Game::Engine::lookupActor(Actor* actor)  {
-    for(auto const& candidate : *actors) {
-        if (candidate.get() == actor) {
-            return candidate;
         }
     }
     return nullptr;

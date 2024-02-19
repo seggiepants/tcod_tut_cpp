@@ -16,7 +16,7 @@ namespace Game {
 
         Map(int width, int height);
         virtual ~Map();
-        void init(bool withActors);
+        void init(bool generateRooms);
         bool canWalk(int x, int y) const;
         bool isWall(int x, int y) const;
         bool isInFov(int x, int y) const;
@@ -30,13 +30,12 @@ namespace Game {
     protected:
         Tile* tiles;
         TCODMap* map;
-        long seed;
         TCODRandom* rng;
         friend class BspListener;
         void addItem(int x, int y);
         void addMonster(int x, int y);
         void dig(int x1, int y1, int x2, int y2);
-        void createRoom(bool first, int x1, int y1, int x2, int y2, bool withActors);
+        void createRoom(bool first, int x1, int y1, int x2, int y2);
         void setWall(int x, int y);
     };
 }

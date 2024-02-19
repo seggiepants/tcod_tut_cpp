@@ -15,7 +15,7 @@ namespace Game {
         float damage;
         Fireball();
         Fireball(float range, float damage);
-        bool use(std::shared_ptr<Actor> owner, Actor* wearer);
+        bool use(Actor* owner, Actor* wearer);
         int getType() {return (int)Game::Pickable::PickableType::FIREBALL; };
         void load(std::ifstream& stream);
         void save(std::ofstream& stream);

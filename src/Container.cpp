@@ -8,12 +8,12 @@ Game::Container::Container(size_t size) : size(size) {}
 
 Game::Container::~Container() {
     for(auto& actor : inventory){
-        actor.reset();
+        delete actor;
     }
     inventory.clear();
 }
 
-bool Game::Container::add(std::shared_ptr<Actor> actor) { 
+bool Game::Container::add(Actor* actor) { 
     if (size > 0 && inventory.size() >= size) {
         // inventory full
         return false; 
@@ -22,7 +22,7 @@ bool Game::Container::add(std::shared_ptr<Actor> actor) {
     return true;
 }
 
-void Game::Container::remove(std::shared_ptr<Actor> actor) {
+void Game::Container::remove(Actor* actor) {
     inventory.remove(actor);
 }
 
@@ -32,7 +32,7 @@ void Game::Container::load(std::ifstream& stream) {
     inventory.clear();
     stream >> size >> delim >> countItems >> delim;
     for(int i = 0; i < countItems;++i) {
-        std::shared_ptr<Game::Actor> item = std::make_shared<Game::Actor>();
+        Actor* item = new Actor();
         item->load(stream);
         inventory.push_back(item);
     }

@@ -29,7 +29,7 @@ namespace Game {
             void load(std::ifstream& stream);
             void save(std::ofstream& stream);
         };
-        std::list<std::shared_ptr<Game::Gui::Message>> log;
+        std::list<Game::Gui::Message*> log;
 
     protected:
         tcod::Console* con;        

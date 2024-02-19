@@ -46,7 +46,7 @@ void Game::MonsterAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
         }
     }
      else if (owner->attacker) { // we have an attacker object.
-        owner->attacker->attack(owner, engine.player.get());
+        owner->attacker->attack(owner, engine.player);
     }
 }
 

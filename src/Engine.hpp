@@ -22,17 +22,16 @@ namespace Game {
         void update();
         void render();
         void present() {context.present(console);};
-        std::shared_ptr<Game::Actor> getActor(int x, int y) const;
+        Actor* getActor(int x, int y) const;
         bool isRunning() { return running; }
         bool pickATile(int* x, int* y, float maxRange = 0.0f);
         void Stop() { running = false;}
-        void sendToBack(std::shared_ptr<Game::Actor> actor);
+        void sendToBack(Actor* actor);
         void flush() { context.present(console); }
         tcod::Console& get_console() { return console; }; 
         Actor* getClosestMonster(int x, int y, float range) const;
-        std::shared_ptr<Actor> lookupActor(Actor* actor);
 
-        std::shared_ptr<std::list<std::shared_ptr<Game::Actor>>> actors;
+        std::list<Game::Actor*> actors;
 
         enum GameStatus {
             STARTUP,
@@ -41,9 +40,9 @@ namespace Game {
             VICTORY,
             DEFEAT
         } gameStatus;
-        std::shared_ptr<Actor> player;
+        Actor* player;
         Map* map;
-        std::shared_ptr<Gui> gui;
+        Gui* gui;
         int fovRadius;
         SDL_Keycode currentKey;
         int get_width() { return screenWidth; }

@@ -4,7 +4,7 @@
 Game::Healer::Healer(): amount(0.0f) {}
 Game::Healer::Healer(float amount): amount(amount) {}
 
-bool Game::Healer::use(std::shared_ptr<Actor> owner, Actor* wearer) {
+bool Game::Healer::use(Actor* owner, Actor* wearer) {
     if (wearer->destructible) {
         float amountHealed = wearer->destructible->heal(amount);
         if (amountHealed > 0) {

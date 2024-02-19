@@ -6,7 +6,7 @@ Game::LightningBolt::LightningBolt() : range(0.0f), damage(0.0f) {}
 
 Game::LightningBolt::LightningBolt(float range, float damage) : range(range), damage(damage) {}
 
-bool Game::LightningBolt::use(std::shared_ptr<Actor> owner, Actor* wearer) {
+bool Game::LightningBolt::use(Actor* owner, Actor* wearer) {
     Actor* closestMonster = engine.getClosestMonster(wearer->x, wearer->y, range);
 
     if (!closestMonster) {

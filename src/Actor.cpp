@@ -27,8 +27,8 @@ Game::Actor::~Actor() {
     if (attacker != nullptr) delete attacker;
     if (destructible != nullptr) delete destructible;
     if (ai != nullptr) delete ai;
-    if (pickable != nullptr && pickable.get()) pickable.reset();
-    if (container != nullptr && container.get()) container.reset();
+    if (pickable != nullptr) delete pickable;
+    if (container != nullptr) delete container;
 }
 
 void Game::Actor::render() const {
@@ -45,7 +45,7 @@ void Game::Actor::update() {
 float Game::Actor::getDistance(int cx, int cy) const {
     int dx = x - cx;
     int dy = y - cy;
-    return sqrt((dx * dx) + (dy * dy));
+    return (float)sqrt((dx * dx) + (dy * dy));
 }
 
 void Game::Actor::load(std::ifstream& stream) {
@@ -53,10 +53,11 @@ void Game::Actor::load(std::ifstream& stream) {
     int bufferSize;
     stream >> x >> delim >> y >> delim >> ch >> delim >> col.r >> delim >> col.g >> delim >> col.b >> delim;
     stream >> bufferSize >> delim;
-    char buffer[bufferSize + 1];
+    char* buffer = new char[bufferSize + 1];
     stream.read(buffer, bufferSize);
     buffer[bufferSize] = '\0';
     name.assign(buffer);    
+    delete[] buffer;
     stream >> delim >> blocks >> delim;
 
     //attacker, destructible, ai, pickable, container);
@@ -97,7 +98,7 @@ void Game::Actor::load(std::ifstream& stream) {
     hasField = false;
     stream >> hasField >> delim;
     if (hasField) {   
-        container = std::make_shared<Game::Container>();             
+        container = new Container();             
         container->load(stream);
     } else {container = nullptr;}
 }
@@ -127,14 +128,14 @@ void Game::Actor::save(std::ofstream& stream) {
         ai->save(stream);
     }
 
-    hasField = pickable && pickable.get();
+    hasField = pickable;
     stream << hasField << delim;
     if (hasField) {
         stream << pickable->getType() << delim;
         pickable->save(stream);
     }
     
-    hasField = container && container.get();
+    hasField = container;
     stream << hasField << delim;
     if (hasField) {
         container->save(stream);

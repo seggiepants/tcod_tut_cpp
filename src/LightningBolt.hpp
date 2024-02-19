@@ -12,7 +12,7 @@ namespace Game {
         float damage;
         LightningBolt();
         LightningBolt(float range, float damage);
-        bool use(std::shared_ptr<Actor> owner, Actor* wearer);        
+        bool use(Actor* owner, Actor* wearer);        
         int getType() {return (int)PickableType::LIGHTNING_BOLT; };
         void load(std::ifstream& stream);
         void save(std::ofstream& stream);        

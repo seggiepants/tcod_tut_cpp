@@ -12,7 +12,7 @@ namespace Game {
     public:
         Confuser();
         Confuser(int countTurns, float range);
-        bool use(std::shared_ptr<Actor> owner, Actor* wearer);
+        bool use(Actor* owner, Actor* wearer);
         int getType() {return (int)PickableType::CONFUSER; };
         void load(std::ifstream& stream);
         void save(std::ofstream& stream);

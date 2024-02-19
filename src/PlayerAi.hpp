@@ -16,8 +16,8 @@ namespace Game {
         void save(std::ofstream& stream);
     protected:
         bool moveOrAttack(Actor* owner, int targetX, int targetY);
-        void handleActionKey(std::shared_ptr<Actor> owner, int key);
-        std::shared_ptr<Actor> chooseFromInventory(std::shared_ptr<Actor> owner);
+        void handleActionKey(Actor* owner, int key);
+        Game::Actor* chooseFromInventory(Actor* owner);
     };
 }
 

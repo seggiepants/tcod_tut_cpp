@@ -18,9 +18,9 @@ void Game::ConfusedMonsterAi::update(Actor* owner) {
             owner->x = destX;
             owner->y = destY;
         } else {
-            std::shared_ptr<Actor> actor = engine.getActor(destX, destY);
+            Actor* actor = engine.getActor(destX, destY);
             if (actor && owner->attacker) {
-                owner->attacker->attack(owner, actor.get());  
+                owner->attacker->attack(owner, actor);  
             }
         }
     }

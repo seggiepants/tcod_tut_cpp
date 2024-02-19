@@ -39,8 +39,8 @@ namespace Game {
         Attacker* attacker; // something that deals damage
         Destructible* destructible; // something that can be damaged
         Ai* ai; // something self-updating
-        std::shared_ptr<Game::Pickable> pickable; // something that can be picked and used.
-        std::shared_ptr<Game::Container> container; // something that can contain actors.
+        Pickable* pickable; // something that can be picked and used.
+        Container* container; // something that can contain actors.
         Actor();
         Actor(int x, int y, int ch, const char* name, const TCOD_ColorRGBA & col);
         virtual ~Actor();

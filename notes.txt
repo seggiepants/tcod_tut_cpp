@@ -247,4 +247,12 @@ One more thing I want to do is try to use ZLIB to compress the save file. It's o
 
 Ok, did another run went and killed everything saved some potions to see if they were in the wall when I came back. Save. Reload. All the visibility is wrong and I am stuck in a wall or something and can't move. Ok, needs more work.
 
+19 FEB 2024
+I just did a screenshot before and after save/loading a game. While the maps are similar (probably the same bsp partitioning), they are not the same room sizes and positions. I think adding the monsters the first time around, but not the second must have advanced the RNG. I tried just adding the actors and them deleting them (had to make a mock player object first), but I still got the wrong data (is there random in player?). So I am just going to save the map already built. Sure it doubles the save game size but at the point I don't care. Well what can I say, that did the trick. Still just an 8.5kb save file. I am going to skip zlib-ing it. Or save it for post tutorial at least. I think I am going to switch all my shared pointers back to ordinary ones. I don't like the pointer inconsistency, then I will call it finished for this part. It looks like github was saying something didn't compile from last check-in, I should check that out too. I do feel bad all of the fancy stuff I tried to do pretty much failed.
+
+Github didn't like some non-constant size memory allocation. They were right so I fixed it. No more shared_ptr stuff either. Anyway part 10.1 done FINALLY!
+
+
+
+
 

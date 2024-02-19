@@ -14,13 +14,13 @@ namespace Game {
     class Container {
     public:
         size_t size;
-        std::list<std::shared_ptr<Actor>> inventory;
+        std::list<Actor*> inventory;
 
         Container();
         Container(size_t size);
         virtual ~Container();
-        bool add(std::shared_ptr<Actor> actor);
-        void remove(std::shared_ptr<Actor> actor);
+        bool add(Actor* actor);
+        void remove(Actor* actor);
         void load(std::ifstream& stream);
         void save(std::ofstream& stream);
     };

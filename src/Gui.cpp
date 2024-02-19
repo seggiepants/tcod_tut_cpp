@@ -16,7 +16,7 @@ Game::Gui::~Gui() {
     delete con;
     for(auto& message : log)
     {
-        message.reset();
+        delete message;
     }
     log.clear();
 }
@@ -72,9 +72,9 @@ void Game::Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
     do {
         // make room for the new message
         if (log.size() >= MSG_HEIGHT) {
-            std::shared_ptr<Message> top = log.front();
+            Message* top = log.front();
             log.pop_front();
-            top.reset();
+            delete top;
         }        
 
         lineEnd = std::strchr(lineBegin, '\n');
@@ -82,7 +82,7 @@ void Game::Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
         if (lineEnd) {
             *lineEnd = '\0';
         }
-        log.push_back(std::make_shared<Message>(lineBegin, col));
+        log.push_back(new Message(lineBegin, col));
         // go to next line;
         lineBegin = lineEnd + 1;
     } while (lineEnd);
@@ -96,7 +96,7 @@ void Game::Gui::renderMouseLook() {
     std::string buffer;
     bool first = true;
     
-    for(auto const & actor: *engine.actors ) {
+    for(auto const & actor: engine.actors ) {
         if (actor->x == engine.mouseX && actor->y == engine.mouseY) {
             if (!first) {
                 buffer.append(", ");            
@@ -116,7 +116,7 @@ void Game::Gui::load(std::ifstream& stream) {
     log.clear();
     stream >> countMessages >> delim;
     for(int i = 0; i < countMessages;++i) {
-        std::shared_ptr<Game::Gui::Message> message = std::make_shared<Game::Gui::Message>("", white);
+        Message* message = new Message("", white);
         message->load(stream);
         log.push_back(message);
     }
