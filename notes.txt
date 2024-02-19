@@ -252,7 +252,13 @@ I just did a screenshot before and after save/loading a game. While the maps are
 
 Github didn't like some non-constant size memory allocation. They were right so I fixed it. No more shared_ptr stuff either. Anyway part 10.1 done FINALLY!
 
+10.2 Game Menu
+Windows build had some errors lets try to fix those. Think I got it. Missed a few non-constant memory allocations.
 
+I already have a destroy() function, and I will use that instead of the new term().
 
+How many times am I going to repeat up/down/left/right event code? What is this three or four so far? 
+Some strange bugs and annoyances to fix but things seem to be working. I am noticing that the pause function won't work in emscripten mode. I should probably just not handle escape in emscripten mode. No reason to pause with a title screen. Trying to save/reload or just not trash memory is not as nice.
 
+Think I will call that part done. Huzzah! One left to go (not counting extra episodes that I am currently undecided of if I will follow or not).
 

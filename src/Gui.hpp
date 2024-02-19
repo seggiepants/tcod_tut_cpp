@@ -13,6 +13,7 @@ namespace Game {
     public:
         Gui();
         virtual ~Gui();
+        void clear();
         void render();
         void message(const TCOD_ColorRGB& col, const char * text, ...);
         int get_width() { return con->get_width();}

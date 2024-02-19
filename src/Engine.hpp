@@ -8,6 +8,7 @@
 #include "Actor.hpp"
 #include "Gui.hpp"
 #include "Map.hpp"
+#include "Menu.hpp"
 
 namespace Game {
     class Engine {
@@ -47,11 +48,13 @@ namespace Game {
         SDL_Keycode currentKey;
         int get_width() { return screenWidth; }
         int get_height() { return screenHeight; }
+        int get_tile_width() { return tileWidth; }
+        int get_tile_height() { return tileHeight; }
         bool mouseClicked;
         int mouseX; // mouse position in tiles/characters
         int mouseY;
+        std::filesystem::path GetRootDir();
     protected:
-        std::filesystem::path GetDataDir();
         tcod::Console console;
         tcod::Context context;
         bool running;
@@ -60,6 +63,7 @@ namespace Game {
         int screenHeight;
         int tileWidth;
         int tileHeight;
+        Menu menu;
     };
 }
     
@@ -70,6 +74,7 @@ extern TCOD_ColorRGBA GREEN;
 extern TCOD_ColorRGBA LIGHT_BLUE;
 extern TCOD_ColorRGBA LIGHT_GREEN;
 extern TCOD_ColorRGBA LIGHT_YELLOW;
+extern TCOD_ColorRGBA LIGHTER_ORANGE;
 extern TCOD_ColorRGBA MAGENTA;
 extern TCOD_ColorRGBA ORANGE;
 extern TCOD_ColorRGBA RED;
@@ -93,6 +98,7 @@ extern TCOD_ColorRGB lightGreen;
 extern TCOD_ColorRGB lightGrey;
 extern TCOD_ColorRGB lightRed;
 extern TCOD_ColorRGB lightYellow;
+extern TCOD_ColorRGB lighterOrange;
 extern TCOD_ColorRGB orange;
 extern TCOD_ColorRGB red;
 extern TCOD_ColorRGB white;
