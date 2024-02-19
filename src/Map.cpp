@@ -37,11 +37,10 @@ bool Game::BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
         int x, y, w, h;
 
         // dig a room
-        TCODRandom* rng = TCODRandom::getInstance();
-        w = rng->getInt(ROOM_MIN_SIZE, node->w - 2);
-        h = rng->getInt(ROOM_MIN_SIZE, node->h - 2);
-        x = rng->getInt(node->x + 1, node->x + node->w -  w - 1);
-        y = rng->getInt(node->y + 1, node->y + node->h -  h - 1);
+        w = map.rng->getInt(ROOM_MIN_SIZE, node->w - 2);
+        h = map.rng->getInt(ROOM_MIN_SIZE, node->h - 2);
+        x = map.rng->getInt(node->x + 1, node->x + node->w -  w - 1);
+        y = map.rng->getInt(node->y + 1, node->y + node->h -  h - 1);
         map.createRoom(this->roomNum == 0, x, y, x + w - 1, y + h - 1);
 
         if (roomNum != 0) {
@@ -57,12 +56,26 @@ bool Game::BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
 }
 
 Game::Map::Map(int width, int height) : width(width), height(height) {
+    tiles = nullptr;
+    map = nullptr;
+} 
+
+void Game::Map::init(bool generateRooms) {
+    rng = new TCODRandom();
+    
+    if (tiles) delete[] tiles;
+
     tiles = new Tile[width * height];
+    
+    if (map) delete map;
     map = new TCODMap(width, height);
-    TCODBsp bsp(0, 0, width, height);
-    bsp.splitRecursive(NULL, 8, NODE_MIN_SIZE, NODE_MIN_SIZE, 1.5f, 1.5f);
-    BspListener listener(*this);
-    bsp.traverseInvertedLevelOrder(&listener, NULL);
+
+    if (generateRooms) {
+        TCODBsp bsp(0, 0, width, height);
+        bsp.splitRecursive(rng, 8, NODE_MIN_SIZE, NODE_MIN_SIZE, 1.5f, 1.5f);
+        BspListener listener(*this);
+        bsp.traverseInvertedLevelOrder(&listener, nullptr);
+    }
 }
 
 Game::Map::~Map() {
@@ -118,12 +131,11 @@ void Game::Map::render() const {
 }
 
 void Game::Map::addItem(int x, int y) {
-    TCODRandom* rng = TCODRandom::getInstance();
+    rng = TCODRandom::getInstance();
 
     int dice = rng->getInt(0, 100);
     if (dice < 70) { 
         Actor* healthPotion = new Actor(x, y, '!', "health potion", VIOLET);
-
         healthPotion->blocks = false;
         healthPotion->pickable = new Healer(4);
         engine.actors.push_back(healthPotion);
@@ -202,6 +214,7 @@ void Game::Map::dig(int x1, int y1, int x2, int y2) {
 
 void Game::Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
     dig(x1, y1, x2, y2);
+    
     if (first) {
         engine.player->x = (x1 + x2) / 2;
         engine.player->y = (y1 + y2) / 2;        
@@ -227,4 +240,45 @@ void Game::Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
             countItems--;
         }
     }
+}
+
+void Game::Map::load(std::ifstream& stream) {
+    char delim = ',';
+    init(false);
+    char buffer[width * height];    
+    stream.read(buffer, width * height);
+    int rowIdx;
+    for(int j = 0; j < height; j++) {
+        rowIdx = width * j;
+        for(int i = 0; i < width; i++) {
+            bool bWalkable = buffer[rowIdx + i] == '1' ? true : false;
+            map->setProperties(i, j, bWalkable, bWalkable);
+        }
+    }
+    stream >> delim;
+    stream.read(buffer, width * height);
+    for(int i = 0; i < width * height; i++) {
+        tiles[i].explored = (buffer[i] == '1');
+    }
+    stream >> delim;
+}
+
+void Game::Map::save(std::ofstream& stream) {
+    const char delim = ',';
+    char buffer[width * height];
+    int rowIdx;
+    for(int j = 0; j < height; j++) {
+        rowIdx = width * j;
+        for(int i = 0; i < width; i++) {
+            buffer[rowIdx + i] = map->isWalkable(i, j) ? '1' : '0';
+        }
+    }
+    stream.write(buffer, width * height);
+    stream << delim;
+
+    for(int i = 0; i < width * height; i++) {
+        buffer[i] = tiles[i].explored ? '1' : '0';
+    }
+    stream.write(buffer, width * height);
+    stream << delim;
 }

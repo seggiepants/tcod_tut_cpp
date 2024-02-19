@@ -14,7 +14,11 @@ namespace Game {
     public:
         Engine();
         ~Engine();
-        void init(int argc, char** argv, int screenWidth, int screenHeight);
+        void preInit(int argc, char** argv, int screenWidth, int screenHeight);
+        void destroy();
+        void init();
+        void load();
+        void save();
         void update();
         void render();
         void present() {context.present(console);};
@@ -27,7 +31,8 @@ namespace Game {
         tcod::Console& get_console() { return console; }; 
         Actor* getClosestMonster(int x, int y, float range) const;
 
-        std::list<Actor *> actors;
+        std::list<Game::Actor*> actors;
+
         enum GameStatus {
             STARTUP,
             IDLE,

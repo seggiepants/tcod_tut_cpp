@@ -34,7 +34,7 @@ void Game::Gui::render() {
 
     int y = 1;
     for(auto& message : log) {
-        tcod::print(*con, {MSG_X, y}, message->text->c_str(), message->col, black, TCOD_LEFT, TCOD_BKGND_SET);        
+        tcod::print(*con, {MSG_X, y}, message->text.c_str(), message->col, black, TCOD_LEFT, TCOD_BKGND_SET);        
         y++;
     }
 
@@ -103,17 +103,59 @@ void Game::Gui::renderMouseLook() {
             } else {
                 first = false;
             }
-            buffer.append(actor->name->c_str());
+            buffer.append(actor->name.c_str());
         }
     }
     
     tcod::print(*con, {1, 0}, buffer, lightGrey, black, TCOD_LEFT, TCOD_BKGND_SET);             
 }
 
+void Game::Gui::load(std::ifstream& stream) {
+    char delim = ',';
+    int countMessages = 0;
+    log.clear();
+    stream >> countMessages >> delim;
+    for(int i = 0; i < countMessages;++i) {
+        Message* message = new Message("", white);
+        message->load(stream);
+        log.push_back(message);
+    }
+}
+
+void Game::Gui::save(std::ofstream& stream) {
+    const char delim = ',';
+    stream << log.size() << delim;
+    for(auto& message : log) {
+        message->save(stream);
+    }
+}
+
+
+
+Game::Gui::Message::Message() : text(nullptr), col({255, 255, 255}) {}
+
 Game::Gui::Message::Message(const char * text, const TCOD_ColorRGB& col) : col(col) {
-    this->text = new std::string(text);
+    this->text.assign(text);
 }
 
 Game::Gui::Message::~Message() {
-    delete text;
+    text.clear();
 }
+
+void Game::Gui::Message::load(std::ifstream& stream) {
+    char delim = ',';
+    stream >> col.r >> delim >> col.g >> delim >> col.b >> delim;
+    int strLen;
+    stream >> strLen >> delim;
+    char buffer[strLen + 1];
+    stream.read(buffer, strLen);
+    buffer[strLen] = '\0';
+    stream >> delim;
+    text.assign(buffer);
+}
+
+void Game::Gui::Message::save(std::ofstream& stream) {
+    const char delim = ',';
+    stream << col.r << delim << col.g << delim << col.b << delim << text.size() << delim << text.c_str() << delim;    
+}
+

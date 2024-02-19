@@ -4,10 +4,15 @@
 #include "Ai.hpp"
 
 namespace Game {
+    class Actor;
+    
     class MonsterAi : public Ai {
     public:
-        void update(Actor* owner);
-
+        ~MonsterAi() {}
+        void update(Actor* owner);   
+        int getType() {return (int)AiType::MONSTER; };
+        void load(std::ifstream& stream);
+        void save(std::ofstream& stream);
     protected:
         void moveOrAttack(Actor* owner, int targetX, int targetY);
         int moveCount = 0;

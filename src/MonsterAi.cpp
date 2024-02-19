@@ -1,6 +1,7 @@
+#include <cmath>
 #include "MonsterAi.hpp"
 #include "Engine.hpp"
-#include <cmath>
+#include "Actor.hpp"
 
 static const int TRACKING_TURNS = 3;
 
@@ -47,5 +48,16 @@ void Game::MonsterAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
      else if (owner->attacker) { // we have an attacker object.
         owner->attacker->attack(owner, engine.player);
     }
+}
+
+void Game::MonsterAi::load(std::ifstream& stream) {
+    char delim = ',';
+    // type already consumed
+    stream >> moveCount >> delim;
+}
+
+void Game::MonsterAi::save(std::ofstream& stream) {
+    const char delim = ',';
+    stream << moveCount << delim;
 
 }

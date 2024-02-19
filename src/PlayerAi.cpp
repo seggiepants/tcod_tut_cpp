@@ -1,8 +1,15 @@
 #include "PlayerAi.hpp"
 #include "Engine.hpp"
+#include "Actor.hpp"
 #include "Container.hpp"
 #include "Pickable.hpp"
 #include <SDL.h>
+
+#ifdef _WIN32
+#define UNUSED
+#else
+#define UNUSED __attribute__((unused))
+#endif
 
 void Game::PlayerAi::update(Actor* owner) {
     if (owner->destructible && owner->destructible->isDead()) {
@@ -58,7 +65,7 @@ void Game::PlayerAi::update(Actor* owner) {
     }    
 }
 
-Game::Actor* Game::PlayerAi::chooseFromInventory(Game::Actor* owner) {
+Game::Actor* Game::PlayerAi::chooseFromInventory(Actor* owner) {
     static const int INVENTORY_WIDTH = 50;
     static const int INVENTORY_HEIGHT = 28; // 26 letters in alphabet + 2 for border.
     
@@ -74,7 +81,7 @@ Game::Actor* Game::PlayerAi::chooseFromInventory(Game::Actor* owner) {
     int shortcut = (int)'a';
     int y = 1;
     for(auto const & actor : owner->container->inventory) {
-        TCOD_console_printf(con.get(), 2, y, "(%c) %s", shortcut, actor->name->c_str());
+        TCOD_console_printf(con.get(), 2, y, "(%c) %s", shortcut, actor->name.c_str());
         y++;
         shortcut++;
     }    
@@ -119,7 +126,7 @@ void Game::PlayerAi::handleActionKey(Actor* owner, int key) {
                 if (actor->pickable && actor->x == owner->x && actor->y == owner-> y) {
                     if (actor->pickable->pick(actor, owner)) {
                         found = true;
-                        engine.gui->message(lightGrey, "You picked up the %s.", actor->name->c_str());
+                        engine.gui->message(lightGrey, "You picked up the %s.", actor->name.c_str());
                         break;
                     } else if (!found) {
                         found = true;
@@ -175,7 +182,7 @@ bool Game::PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
     for (auto const & actor : engine.actors) {
         bool corpseOrItem = ((actor->destructible && actor->destructible->isDead()) || actor->pickable);
         if (corpseOrItem && actor->x == targetX && actor->y == targetY) {
-            engine.gui->message(lightGrey, "There's a %s here", actor->name->c_str());
+            engine.gui->message(lightGrey, "There's a %s here", actor->name.c_str());
             break;
         }
     }
@@ -183,3 +190,13 @@ bool Game::PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
     owner->y = targetY;
     return true;
 }
+
+void Game::PlayerAi::load(UNUSED std::ifstream& stream) {
+    // Type already read previously no data left.
+    return;
+}
+
+void Game::PlayerAi::save(UNUSED std::ofstream& stream) {
+    return;
+}
+
