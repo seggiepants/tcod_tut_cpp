@@ -245,7 +245,7 @@ void Game::Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
 void Game::Map::load(std::ifstream& stream) {
     char delim = ',';
     init(false);
-    char buffer[width * height];    
+    char* buffer = new char[width * height];    
     stream.read(buffer, width * height);
     int rowIdx;
     for(int j = 0; j < height; j++) {
@@ -261,11 +261,12 @@ void Game::Map::load(std::ifstream& stream) {
         tiles[i].explored = (buffer[i] == '1');
     }
     stream >> delim;
+    delete[] buffer;
 }
 
 void Game::Map::save(std::ofstream& stream) {
     const char delim = ',';
-    char buffer[width * height];
+    char* buffer = new char[width * height];
     int rowIdx;
     for(int j = 0; j < height; j++) {
         rowIdx = width * j;
@@ -281,4 +282,5 @@ void Game::Map::save(std::ofstream& stream) {
     }
     stream.write(buffer, width * height);
     stream << delim;
+    delete buffer;
 }

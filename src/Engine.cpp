@@ -14,6 +14,7 @@ TCOD_ColorRGBA GREEN = {0, 255, 0, 255};
 TCOD_ColorRGBA LIGHT_BLUE = {63, 63, 255, 255};
 TCOD_ColorRGBA LIGHT_GREEN = {63, 255, 63, 255};
 TCOD_ColorRGBA LIGHT_YELLOW = {255, 255, 63, 255};
+TCOD_ColorRGBA LIGHTER_ORANGE = {255, 191, 127, 255};
 TCOD_ColorRGBA MAGENTA = {255, 0, 255, 255};
 TCOD_ColorRGBA ORANGE = {255, 127, 0, 255};
 TCOD_ColorRGBA RED = {255, 0, 0, 255};
@@ -37,6 +38,7 @@ TCOD_ColorRGB lightGreen = {63, 255, 63};
 TCOD_ColorRGB lightGrey = {159, 159, 159};
 TCOD_ColorRGB lightRed = {255, 63, 63};
 TCOD_ColorRGB lightYellow = {255, 255, 63};
+TCOD_ColorRGB lighterOrange = {255, 191, 127};
 TCOD_ColorRGB orange = {255, 127, 0};
 TCOD_ColorRGB red = {255, 0, 0};
 TCOD_ColorRGB white = {255, 255, 255};
@@ -53,6 +55,8 @@ Game::Engine::Engine() : gameStatus(STARTUP), fovRadius(10), currentKey((SDL_Key
 
 Game::Engine::~Engine() {
     destroy();
+    delete gui;
+    gui = nullptr;
 }
 
 void Game::Engine::destroy() {
@@ -67,9 +71,8 @@ void Game::Engine::destroy() {
         map = nullptr;
     }
 
-    if (gui != nullptr) {
-        delete gui;
-        gui = nullptr;
+    if (gui) {
+        gui->clear();
     }
 }
 
@@ -90,7 +93,7 @@ if (initialized)
         params.sdl_window_flags = SDL_WINDOW_RESIZABLE;
         params.window_title = "Libtcod C++ Tutorial";
 
-        auto tileset = tcod::load_tilesheet(GetDataDir() / "dejavu16x16_gs_tc.png", {32, 8}, tcod::CHARMAP_TCOD);
+        auto tileset = tcod::load_tilesheet(GetRootDir() / "data" / "dejavu16x16_gs_tc.png", {32, 8}, tcod::CHARMAP_TCOD);
         params.tileset = tileset.get();
         tileWidth = tileset.get_tile_height();
         tileHeight = tileset.get_tile_width();
@@ -116,18 +119,43 @@ void Game::Engine::init() {
     player->attacker = new Attacker(5);
     player->ai = new PlayerAi();
     player->container = new Container(26);
-    gui = new Gui();
+    if (!gui)
+        gui = new Gui();
+
     map = new Map(console.get_width(), console.get_height() - gui->get_height());
     map->init(true);
     actors.push_back(player); // Make sure player is on-top.
     gui->message(red, "Welcome stranger!\nPrepare to perish in the Tombs of the Ancient Kings.");
+    gameStatus = GameStatus::STARTUP;
     running = true;
 }
 
 void Game::Engine::load() {
+    bool hasSaveFile = false;
+
 #ifndef __EMSCRIPTEN__
     std::filesystem::path path(SAVE_FILENAME);
-    if (std::filesystem::exists(path)) {
+    if (std::filesystem::exists(path))  {
+        hasSaveFile = true;
+    }
+#endif
+
+    menu.clear();
+    menu.addItem(Menu::NEW_GAME, "New Game");
+    if (hasSaveFile) {
+        menu.addItem(Menu::CONTINUE, "Continue");
+    }
+    menu.addItem(Menu::EXIT, "Exit");
+
+    Menu::MenuItemCode selection = menu.pick();
+
+    if (selection == Menu::EXIT || selection == Menu::NONE) {
+        Stop();
+        return;
+    } else if (selection == Menu::NEW_GAME) {
+        destroy();
+        init();
+    } else { // selection == MenuItemCode::CONTINUE 
         std::ifstream stream(SAVE_FILENAME, std::ios::binary | std::ios::in);
         // cereal::JSONInputArchive archive(fs);
 
@@ -166,14 +194,9 @@ void Game::Engine::load() {
         gui->load(stream);
 
         stream.close();
-        running = true;
-        
-    } else {
-        engine.init();
+        gameStatus = GameStatus::STARTUP;
+        running = true;        
     }
-#else
-    engine.init();
-#endif
 }
 
 void Game::Engine::save() {
@@ -235,7 +258,10 @@ void Game::Engine::update() {
         case SDL_KEYDOWN:
             switch(event.key.keysym.sym) {
             case SDLK_ESCAPE:
-                running = false;
+#ifndef __EMSCRIPTEN__
+                save();
+                load();
+#endif
                 break;
             default:
                 currentKey = event.key.keysym.sym;
@@ -439,7 +465,7 @@ Game::Actor* Game::Engine::getActor(int x, int y) const {
 }
 
 /// Return the data directory.
-std::filesystem::path Game::Engine::GetDataDir() {
+std::filesystem::path Game::Engine::GetRootDir() {
     static auto root_directory = std::filesystem::path{"."};  // Begin at the working directory.
     while (!std::filesystem::exists(root_directory / "data")) {
         // If the current working directory is missing the data dir then it will assume it exists in any parent directory.
@@ -448,5 +474,5 @@ std::filesystem::path Game::Engine::GetDataDir() {
             throw std::runtime_error("Could not find the data directory.");
         }
     }
-    return root_directory / "data";
+    return root_directory;
 };

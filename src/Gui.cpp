@@ -14,12 +14,19 @@ Game::Gui::Gui() {
 
 Game::Gui::~Gui() {
     delete con;
-    for(auto& message : log)
-    {
-        delete message;
-    }
-    log.clear();
+    clear();
 }
+
+void Game::Gui::clear() {
+    if (log.size() > 0) {
+        for(auto& message : log)
+        {
+            delete message;
+        }
+        log.clear();
+    }
+}
+
 void Game::Gui::render() {
     
     // Clear the GUI console
@@ -130,8 +137,6 @@ void Game::Gui::save(std::ofstream& stream) {
     }
 }
 
-
-
 Game::Gui::Message::Message() : text(nullptr), col({255, 255, 255}) {}
 
 Game::Gui::Message::Message(const char * text, const TCOD_ColorRGB& col) : col(col) {
@@ -147,11 +152,12 @@ void Game::Gui::Message::load(std::ifstream& stream) {
     stream >> col.r >> delim >> col.g >> delim >> col.b >> delim;
     int strLen;
     stream >> strLen >> delim;
-    char buffer[strLen + 1];
+    char* buffer = new char[strLen + 1];
     stream.read(buffer, strLen);
     buffer[strLen] = '\0';
     stream >> delim;
     text.assign(buffer);
+    delete[] buffer;
 }
 
 void Game::Gui::Message::save(std::ofstream& stream) {
