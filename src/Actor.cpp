@@ -91,7 +91,7 @@ void Game::Actor::load(std::ifstream& stream) {
     if (hasField) {
         int pickableType = 0;
         stream >> pickableType >> delim;
-        pickable = Game::Pickable::create(pickableType);
+        pickable = Pickable::create(pickableType);
         pickable->load(stream);
     } else {pickable = nullptr;}
     

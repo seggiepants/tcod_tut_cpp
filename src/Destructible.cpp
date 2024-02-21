@@ -43,7 +43,8 @@ float Game::Destructible::takeDamage(Actor* owner, float damage) {
     return damage;
 }
 
-void Game::Destructible::die(Actor* owner) {    
+void Game::Destructible::die(Actor* owner) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
     // transform the actor into a corpse!
     owner->ch = '%';
     owner->col = COLOR_CORPSE;
@@ -51,7 +52,7 @@ void Game::Destructible::die(Actor* owner) {
     owner->name.assign(corpseName.c_str()); 
     owner->blocks = false;
     // Make sure corpses are drawn before living actors
-    for(auto const & actor : engine.actors) {
+    for(auto const & actor : game->actors) {
         if (actor == owner) {
             engine.sendToBack(actor);
             break;

@@ -32,7 +32,7 @@ namespace Game {
 #define UNUSED __attribute__((unused))
 #endif
 
-bool Game::BspListener::visitNode(TCODBsp* node, UNUSED void* userData) {
+bool Game::BspListener::visitNode(TCODBsp* node, UNUSED void*) {
     if (node->isLeaf()) {
         int x, y, w, h;
 
@@ -104,7 +104,8 @@ bool Game::Map::isInFov(int x, int y) const {
 }
 
 void Game::Map::computeFov() {
-    map->computeFov(engine.player->x, engine.player->y, engine.fovRadius);
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+    map->computeFov(game->player->x, game->player->y, game->fovRadius);
 }
 
 void Game::Map::setWall(int x, int y) {
@@ -132,44 +133,45 @@ void Game::Map::render() const {
 
 void Game::Map::addItem(int x, int y) {
     rng = TCODRandom::getInstance();
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
 
     int dice = rng->getInt(0, 100);
     if (dice < 70) { 
         Actor* healthPotion = new Actor(x, y, '!', "health potion", VIOLET);
         healthPotion->blocks = false;
         healthPotion->pickable = new Healer(4);
-        engine.actors.push_back(healthPotion);
+        game->actors.push_back(healthPotion);
     } else if (dice < 70 + 10) {
         // create a scroll of lightning bolt.
         Actor* scrollOfLightningBolt = new Actor(x, y, (int)'#', "scroll of lightning bolt", LIGHT_YELLOW);
         scrollOfLightningBolt->blocks = false;
         scrollOfLightningBolt->pickable = new LightningBolt(5, 20);
-        engine.actors.push_back(scrollOfLightningBolt);
+        game->actors.push_back(scrollOfLightningBolt);
     } else if (dice < 70 + 10 + 10) {
         // create a scroll of fireball
         Actor* scrollOfFireball = new Actor(x, y, (int)'#', "scroll of fireball", LIGHT_YELLOW);
         scrollOfFireball->blocks = false;
         scrollOfFireball->pickable = new Fireball(3, 12);
-        engine.actors.push_back(scrollOfFireball);
+        game->actors.push_back(scrollOfFireball);
     } else { //if (dice < 70 + 10 + 10 + 10) {
         // create a scroll of confusion
         Actor* scrollOfConfusion = new Actor(x, y, (int)'#', "scroll of confusion", LIGHT_YELLOW);
         scrollOfConfusion->blocks = false;
         scrollOfConfusion->pickable = new Confuser(10, 8);
-        engine.actors.push_back(scrollOfConfusion);
+        game->actors.push_back(scrollOfConfusion);
     }
 }
 
 void Game::Map::addMonster(int x, int y) {
     TCODRandom* rng = TCODRandom::getInstance();
-
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
     if (rng->getInt(0, 100) < 80) {
         // Create an orc
         Actor* orc = new Actor(x, y, 'o', "Orc", COLOR_ORC);
         orc->destructible = new MonsterDestructible(10, 0, "dead orc");
         orc->attacker = new Attacker(3);
         orc->ai = new MonsterAi();
-        engine.actors.push_back(orc);
+        game->actors.push_back(orc);
     }
     else 
     {
@@ -178,17 +180,18 @@ void Game::Map::addMonster(int x, int y) {
         troll->destructible = new MonsterDestructible(16, 1, "troll carcass");
         troll->attacker = new Attacker(4);
         troll->ai = new MonsterAi();
-        engine.actors.push_back(troll);
+        game->actors.push_back(troll);
     }
 }
 
 bool Game::Map::canWalk(int x, int y) const {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
     if (isWall(x, y)) {
         // this is a wall
         return false;
     }
 
-    for(auto const & actor : engine.actors) {
+    for(auto const & actor : game->actors) {
         if (actor->blocks && actor->x == x && actor->y == y) {
             // there is a blocking actor here. cannot walk.
             return false;
@@ -213,13 +216,14 @@ void Game::Map::dig(int x1, int y1, int x2, int y2) {
 }
 
 void Game::Map::createRoom(bool first, int x1, int y1, int x2, int y2) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
     dig(x1, y1, x2, y2);
     
     if (first) {
-        engine.player->x = (x1 + x2) / 2;
-        engine.player->y = (y1 + y2) / 2;        
+        game->player->x = (x1 + x2) / 2;
+        game->player->y = (y1 + y2) / 2;        
     } else {
-        TCODRandom* rng = TCODRandom::getInstance();
+        //TCODRandom* rng = TCODRandom::getInstance();
         int countMonsters = rng->getInt(0, MAX_ROOM_MONSTERS);
         while (countMonsters > 0) {
             int x = rng->getInt(x1, x2);
@@ -282,5 +286,5 @@ void Game::Map::save(std::ofstream& stream) {
     }
     stream.write(buffer, width * height);
     stream << delim;
-    delete buffer;
+    delete[] buffer;
 }

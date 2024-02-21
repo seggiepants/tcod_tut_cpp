@@ -28,7 +28,8 @@ void Game::Gui::clear() {
 }
 
 void Game::Gui::render() {
-    
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+
     // Clear the GUI console
     TCOD_ConsoleTile tile;
     tile.bg = BLACK;
@@ -37,7 +38,7 @@ void Game::Gui::render() {
     con->clear(tile);
 
     // fill it out
-    renderBar(1, 1, BAR_WIDTH, "HP", engine.player->destructible->hp, engine.player->destructible->maxHp, lightRed, darkerRed);
+    renderBar(1, 1, BAR_WIDTH, "HP", game->player->destructible->hp, game->player->destructible->maxHp, lightRed, darkerRed);
 
     int y = 1;
     for(auto& message : log) {
@@ -67,10 +68,15 @@ void Game::Gui::renderBar(int x, int y, int width, const char* name, float value
 
 void Game::Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
     // build the text
-    char buffer[128];
+    const int BUFFER_LEN = 128;
+    char buffer[BUFFER_LEN];
     va_list args;
     va_start(args, text);
-    std::vsprintf(buffer, text, args);
+    #ifdef _WIN32
+    vsprintf_s(buffer, BUFFER_LEN, text, args);
+    #else
+    std::vsnprintf(buffer, (size_t)BUFFER_LEN, text, args);
+    #endif
     va_end(args);
 
     char* lineBegin = buffer;
@@ -96,14 +102,15 @@ void Game::Gui::message(const TCOD_ColorRGB& col, const char* text, ...) {
 }
 
 void Game::Gui::renderMouseLook() {
-    if (!engine.map->isInFov(engine.mouseX, engine.mouseY)) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+    if (!game->map->isInFov(engine.mouseX, engine.mouseY)) {
         // if mouse is out of fov, nothing to render
         return;
     }
     std::string buffer;
     bool first = true;
     
-    for(auto const & actor: engine.actors ) {
+    for(auto const & actor: game->actors ) {
         if (actor->x == engine.mouseX && actor->y == engine.mouseY) {
             if (!first) {
                 buffer.append(", ");            

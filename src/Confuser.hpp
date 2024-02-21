@@ -13,6 +13,7 @@ namespace Game {
         Confuser();
         Confuser(int countTurns, float range);
         bool use(Actor* owner, Actor* wearer);
+        bool picked(Actor* owner, Actor* wearer, bool success, int x, int y);
         int getType() {return (int)PickableType::CONFUSER; };
         void load(std::ifstream& stream);
         void save(std::ofstream& stream);

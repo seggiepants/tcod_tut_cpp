@@ -3,6 +3,7 @@
 #include "Actor.hpp"
 #include "Container.hpp"
 #include "Pickable.hpp"
+#include "Game.hpp"
 #include <SDL.h>
 
 #ifdef _WIN32
@@ -12,6 +13,7 @@
 #endif
 
 void Game::PlayerAi::update(Actor* owner) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
     if (owner->destructible && owner->destructible->isDead()) {
         // Do nothing if dead.
         return;
@@ -19,7 +21,7 @@ void Game::PlayerAi::update(Actor* owner) {
 
     int dx = 0, dy = 0;
 
-    switch(engine.currentKey) {
+    switch(game->currentKey) {
     case SDLK_KP_9:
         dy = -1;
         dx = 1;
@@ -53,14 +55,14 @@ void Game::PlayerAi::update(Actor* owner) {
         dx = -1;
         break;        
     default:
-        handleActionKey(owner, engine.currentKey);
+        handleActionKey(owner, game->currentKey);
         break;
     }
     
     if (dx!= 0 || dy != 0) {
-        engine.gameStatus = Engine::NEW_TURN;
+        game->gameStatus = Game::NEW_TURN;
         if (moveOrAttack(owner, owner->x + dx, owner->y + dy )) {
-            engine.map->computeFov();            
+            game->map->computeFov();            
         }
     }    
 }
@@ -86,7 +88,7 @@ Game::Actor* Game::PlayerAi::chooseFromInventory(Actor* owner) {
         shortcut++;
     }    
     tcod::blit(engine.get_console(), con, {(engine.get_console().get_width() - INVENTORY_WIDTH) / 2, (engine.get_console().get_height() - INVENTORY_HEIGHT) / 2},{0, 0, con.get_width(), con.get_height()}, 1.0f, 1.0f);    
-    engine.flush();
+    // ZZZ engine.flush();
     SDL_Event event;
     SDL_Keycode currentKey;
     bool done = false;
@@ -117,45 +119,52 @@ Game::Actor* Game::PlayerAi::chooseFromInventory(Actor* owner) {
     return nullptr;
 }
 
+void Game::PlayerAi::useInventory(Actor* owner, Actor* wearer) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+    if (owner && owner->pickable) {
+     owner->pickable->use(owner, wearer);
+      game->gameStatus = Game::NEW_TURN;
+    }
+}
+
+void Game::PlayerAi::dropInventory(Actor* owner, Actor* wearer) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+    if (owner && owner->pickable) {
+        owner->pickable->drop(owner, wearer);
+        game->gameStatus = Game::NEW_TURN;
+    }
+}
+
+
 void Game::PlayerAi::handleActionKey(Actor* owner, int key) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
     switch(key) {
     case SDLK_g:
         {
             bool found = false;
-            for(auto const & actor : engine.actors){
+            for(auto const & actor : game->actors){
                 if (actor->pickable && actor->x == owner->x && actor->y == owner-> y) {
+                    Actor* picked = actor;
                     if (actor->pickable->pick(actor, owner)) {
                         found = true;
-                        engine.gui->message(lightGrey, "You picked up the %s.", actor->name.c_str());
+                        game->gui->message(lightGrey, "You picked up the %s.", picked->name.c_str());
                         break;
                     } else if (!found) {
                         found = true;
-                        engine.gui->message(red, "Your inventory is full.");
+                        game->gui->message(red, "Your inventory is full.");
                     }
                 }
             }
             if (!found) {
-                engine.gui->message(lightGrey, "There is nothing here that you can pick up.");
+                game->gui->message(lightGrey, "There is nothing here that you can pick up.");
             }
         }
         break;
     case SDLK_i:
-        {
-            Actor* actor = chooseFromInventory(owner);
-            if (actor) {
-                actor->pickable->use(actor, owner);
-                engine.gameStatus = Engine::NEW_TURN;
-            }
-        }
+        engine.pickInventory(owner, InventoryCommand::USE);
         break;
     case SDLK_d: // drop item
-        {
-            Actor* actor = chooseFromInventory(owner);
-            if (actor && actor->pickable) {
-                actor->pickable->drop(actor, owner);
-                engine.gameStatus = Engine::NEW_TURN;
-            }
-        }
+        engine.pickInventory(owner, InventoryCommand::DROP);
         break;
     default:
         break;
@@ -163,10 +172,11 @@ void Game::PlayerAi::handleActionKey(Actor* owner, int key) {
 }
 
 bool Game::PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
-    if (engine.map->isWall(targetX, targetY)) return false;
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+    if (game->map->isWall(targetX, targetY)) return false;
 
     // look for actors that are still alive to attack
-    for (auto & actor : engine.actors) {
+    for (auto & actor : game->actors) {
         if (actor != owner &&  // Make sure we don't attack ourself.
             owner->attacker && // Make sure we have an attacker
             actor->destructible &&  // Make sure we are attacking something that can be destroyed
@@ -179,10 +189,10 @@ bool Game::PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
     }
 
     // look for corpses
-    for (auto const & actor : engine.actors) {
+    for (auto const & actor : game->actors) {
         bool corpseOrItem = ((actor->destructible && actor->destructible->isDead()) || actor->pickable);
         if (corpseOrItem && actor->x == targetX && actor->y == targetY) {
-            engine.gui->message(lightGrey, "There's a %s here", actor->name.c_str());
+            game->gui->message(lightGrey, "There's a %s here", actor->name.c_str());
             break;
         }
     }
@@ -191,12 +201,12 @@ bool Game::PlayerAi::moveOrAttack(Actor* owner, int targetX, int targetY) {
     return true;
 }
 
-void Game::PlayerAi::load(UNUSED std::ifstream& stream) {
+void Game::PlayerAi::load(UNUSED std::ifstream&) {
     // Type already read previously no data left.
     return;
 }
 
-void Game::PlayerAi::save(UNUSED std::ofstream& stream) {
+void Game::PlayerAi::save(UNUSED std::ofstream&) {
     return;
 }
 

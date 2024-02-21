@@ -6,17 +6,18 @@ Game::Attacker::Attacker() : power(1.0f) {}
 Game::Attacker::Attacker(float power) : power(power) {}
 
 void Game::Attacker::attack(Actor* owner, Actor* target) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
     if (target->destructible != nullptr && !target->destructible->isDead()) {
         float damage = power - target->destructible->defense;
         if (damage > 0) {
-            engine.gui->message(owner == engine.player ? red : lightGrey, "%s attacks %s for %g hit points." , owner->name.c_str(), target->name.c_str(), damage);
+            game->gui->message(owner == game->player ? red : lightGrey, "%s attacks %s for %g hit points." , owner->name.c_str(), target->name.c_str(), damage);
 
         } else {
-            engine.gui->message(lightGrey, "%s attacks s, but it has no effect!", owner->name.c_str(), target->name.c_str());            
+            game->gui->message(lightGrey, "%s attacks s, but it has no effect!", owner->name.c_str(), target->name.c_str());            
         }
         target->destructible->takeDamage(target, power);
     } else {
-        engine.gui->message(lightGrey, "%s attacks %s in vain.", owner->name.c_str(), target->name.c_str());
+        game->gui->message(lightGrey, "%s attacks %s in vain.", owner->name.c_str(), target->name.c_str());
     }
 }
 

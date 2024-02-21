@@ -12,7 +12,7 @@ Game::MonsterDestructible::MonsterDestructible(float maxHp, float defense, const
 void Game::MonsterDestructible::die(Actor* owner) {
     // Transform it into a nasty corpse! It doesn't block, can't be 
     // attacked and doesn't move.
-    engine.gui->message(lightGrey, "%s is dead", owner->name.c_str());
+  engine.get_gui()->message(lightGrey, "%s is dead", owner->name.c_str());
     Destructible::die(owner);
 }
 

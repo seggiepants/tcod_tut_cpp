@@ -6,9 +6,10 @@ Game::PlayerDestructible::PlayerDestructible(float maxHp, float defense, const c
 }
 
 void Game::PlayerDestructible::die(Actor* owner) {
-    engine.gui->message(red, "You died!");
+  Game* game = (Game*)engine.scenes[GameScene::GAME];
+  game->gui->message(red, "You died!");
     Destructible::die(owner);
-    engine.gameStatus = Engine::DEFEAT;
+    game->gameStatus = Game::DEFEAT;
 }
 
 void Game::PlayerDestructible::save(std::ofstream& stream) {

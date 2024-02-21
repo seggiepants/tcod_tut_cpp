@@ -1,7 +1,7 @@
 TODO:
 x Put all of the classes in the Game namespace.
-X Everything passing around the Console should use the getter now.
-- Different Scene classes (inventory)?
+x Everything passing around the Console should use the getter now.
+- Different Scene classes (inventory, main menu, game)?
 - Get emsripten working.
 - Mouselook on chromebook (look into it).
 - Want a generic cursor keys event handler. Should let you use keyboard, and/or joystick. Interpreted it twice now.
@@ -262,3 +262,25 @@ Some strange bugs and annoyances to fix but things seem to be working. I am noti
 
 Think I will call that part done. Huzzah! One left to go (not counting extra episodes that I am currently undecided of if I will follow or not).
 
+On windows for the moment. It looks like a reference to an Actor is invalidated once deleted in a function call. This causes the you picked up a %s function to fail. Now I need to cache a pointer before use.
+
+I should go back to menu if game over and input event. Maybe pause a second or two first so you don't blitz past it.
+
+20 FEB 2024
+The magic words appear to be vcpkg install --triplet=wasm32-emscripten
+I am sick of trying to get emscripten working. On windows now trying to track down the errors on that platform. Sorry MacOS, I don't have a machine if you get errors.
+
+I went with the C++ version of the library largely so I could make a web/emscripten build just so people might play it. So emscripten is required for my plans. Still building things, that is promising. 
+
+Well I finally got a WASM file, but it doesn't work. I get an error about emscripten_set_main_loop_timing can't be called until emscripten_set_main_loop is called. Well I did call emscripten_set_main_loop but I didn't do the timing call. The default parameters for the main loop don't seem right from the template. All I get is something that burns through CPU without ever showing a frame. Actually if you stop the game, it will show you the menu screen but it isn't interactive anymore at that point. I am starting to think emscripten never worked with libtcod. Getting started guide doesn't show emscripten support.
+
+Found context.pixel_to_tile_coordinates() swapped out the tileWidth/height properties to use it. I hope that fixes chromebook trackpad input. Looking at the getting started guide, found something better -- engine.get_context().convert_event_coordinates(event); Switch to that now. Why are there so many work-alike functions?
+
+SDL_RenderSetVSync(context.get_sdl_renderer(), 1); // turn on vsync (might help emscripten). That is supposed to help with the emscripten_set_main_loop timing error when using SDL2. I couldn't set the flag at create time, but this should be about the same, right? Untested at the moment.
+
+Now that I am thinking of it I probably do need the scene stuff sooner than later. Emscripten can only have one main loop. I think the menu has its own loop maybe that is what is causing the blocking behavior (lightbulb moment?)
+
+If you are a confused monster you can move around and attack even if dead. Fixed that.
+Ok, so I spent way too much time converting things to scenes. Not sure everything is working again, but it looks like it. Tomorrow I will see if that makes any difference getting emscripten working. Yeah I didn't do a bit of part 11 yet. Looking at yesterday's log, I should have the main menu on emscripten. Should be able to start a new game, just need to not nuke things (I think).
+
+21 FEB 2024

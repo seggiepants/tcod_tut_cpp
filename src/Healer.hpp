@@ -7,7 +7,7 @@ namespace Game {
 
     class Actor;
 
-    class Healer : public Game::Pickable {
+    class Healer : public Pickable {
     public:
         float amount; // how many hp
         Healer();

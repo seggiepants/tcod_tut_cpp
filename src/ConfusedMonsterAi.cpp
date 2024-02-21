@@ -8,13 +8,22 @@ Game::ConfusedMonsterAi::ConfusedMonsterAi(int countTurns, Ai* oldAi) : countTur
 
 void Game::ConfusedMonsterAi::update(Actor* owner) {
     TCODRandom* rnd = TCODRandom::getInstance();
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+
+    // Reset the old AI and exit early if the actor is already dead.
+    if (owner->destructible && owner->destructible->isDead()) {
+      owner->ai = oldAi;
+      delete this;
+      return;
+    }
+
     int dx = rnd->getInt(-1, 1);
     int dy = rnd->getInt(-1, 1);
 
     if (dx != 0 || dy != 0) {
         int destX = owner->x + dx;
         int destY = owner->y + dy;
-        if (engine.map->canWalk(destX, destY)) {
+        if (game->map->canWalk(destX, destY)) {
             owner->x = destX;
             owner->y = destY;
         } else {

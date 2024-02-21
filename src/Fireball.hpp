@@ -16,7 +16,8 @@ namespace Game {
         Fireball();
         Fireball(float range, float damage);
         bool use(Actor* owner, Actor* wearer);
-        int getType() {return (int)Game::Pickable::PickableType::FIREBALL; };
+        bool picked(Actor* owner, Actor* wearer, bool success, int x, int y);
+        int getType() {return (int)PickableType::FIREBALL; };
         void load(std::ifstream& stream);
         void save(std::ofstream& stream);
     };

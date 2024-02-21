@@ -32,7 +32,7 @@ namespace Game {
         enum DestructibleType {
             MONSTER,PLAYER
         };
-        static Game::Destructible* create(int type);
+        static Destructible* create(int type);
     };
 }
 

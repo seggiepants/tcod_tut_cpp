@@ -2,37 +2,54 @@
 #define __ENGINE_HPP__
 
 #include <list>
+#include <unordered_map>
 #include <filesystem>
 #include <SDL.h>
 #include <libtcod.hpp>
 #include "Actor.hpp"
 #include "Gui.hpp"
 #include "Map.hpp"
+#include "Scene.hpp"
 #include "Menu.hpp"
+#include "Game.hpp"
+#include "Pickable.hpp"
 
 namespace Game {
+    enum GameScene {
+      EXIT,
+      MENU,
+      GAME,
+      PICKTILE,
+      PICKINVENTORY
+    };
+
+    enum InventoryCommand {
+      NONE,
+      USE,
+      DROP
+    };
+
     class Engine {
     public:
         Engine();
         ~Engine();
-        void preInit(int argc, char** argv, int screenWidth, int screenHeight);
+        void init(int argc, char** argv, int screenWidth, int screenHeight);
         void destroy();
-        void init();
-        void load();
-        void save();
         void update();
         void render();
         void present() {context.present(console);};
         Actor* getActor(int x, int y) const;
         bool isRunning() { return running; }
-        bool pickATile(int* x, int* y, float maxRange = 0.0f);
+        void pickATile(Pickable* source, Actor* owner, Actor* wearer, float maxRange = 0.0f);
+        bool tilePicked(bool success, int x, int y);
+        void pickInventory(Actor* owner, InventoryCommand cmd);
+        bool inventoryPicked(bool success, Actor* owner, Actor* wearer);
         void Stop() { running = false;}
-        void sendToBack(Actor* actor);
-        void flush() { context.present(console); }
-        tcod::Console& get_console() { return console; }; 
-        Actor* getClosestMonster(int x, int y, float range) const;
-
-        std::list<Game::Actor*> actors;
+        void sendToBack(Actor* actor);        
+        tcod::Console& get_console() { return console; };
+        tcod::Context& get_context() { return context; };
+        Actor* getClosestMonster(int x, int y, float range = 0.0f) const;
+        Gui* get_gui();
 
         enum GameStatus {
             STARTUP,
@@ -41,19 +58,14 @@ namespace Game {
             VICTORY,
             DEFEAT
         } gameStatus;
-        Actor* player;
-        Map* map;
-        Gui* gui;
-        int fovRadius;
-        SDL_Keycode currentKey;
         int get_width() { return screenWidth; }
         int get_height() { return screenHeight; }
-        int get_tile_width() { return tileWidth; }
-        int get_tile_height() { return tileHeight; }
         bool mouseClicked;
         int mouseX; // mouse position in tiles/characters
         int mouseY;
         std::filesystem::path GetRootDir();
+        std::unordered_map<GameScene, Scene*> scenes;
+        Scene* currentScene;
     protected:
         tcod::Console console;
         tcod::Context context;
@@ -61,9 +73,10 @@ namespace Game {
         bool initialized;
         int screenWidth;
         int screenHeight;
-        int tileWidth;
-        int tileHeight;
-        Menu menu;
+        Pickable* tilePicker;
+        Actor* pickOwner;
+        Actor* pickWearer;
+        InventoryCommand inventoryCommand;
     };
 }
     
@@ -103,6 +116,8 @@ extern TCOD_ColorRGB orange;
 extern TCOD_ColorRGB red;
 extern TCOD_ColorRGB white;
 extern Game::Engine engine;
+
+extern const char* SAVE_FILENAME;
 
 
 #endif
