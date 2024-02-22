@@ -1,8 +1,8 @@
 TODO:
 x Put all of the classes in the Game namespace.
 x Everything passing around the Console should use the getter now.
-- Different Scene classes (inventory, main menu, game)?
-- Get emsripten working.
+x Different Scene classes (inventory, main menu, game)?
+x Get emsripten working.
 - Mouselook on chromebook (look into it).
 - Want a generic cursor keys event handler. Should let you use keyboard, and/or joystick. Interpreted it twice now.
 
@@ -284,3 +284,44 @@ If you are a confused monster you can move around and attack even if dead. Fixed
 Ok, so I spent way too much time converting things to scenes. Not sure everything is working again, but it looks like it. Tomorrow I will see if that makes any difference getting emscripten working. Yeah I didn't do a bit of part 11 yet. Looking at yesterday's log, I should have the main menu on emscripten. Should be able to start a new game, just need to not nuke things (I think).
 
 21 FEB 2024
+Hey guess what, come on guess. I set up the solution for emscripten again. Two good things. One it didn't break the visual studio build this time (hooray). Two, the thing actually worked in emscripten. Just exactly as expected. I am very happy at the moment. Couple of things. Like I said yesterday, I should try to let you back to the main menu so you can start a new game or resume. Also, I really shouldn't have the exit command in emscripten mode, it makes no sense. Speed was just fine, I may have left it at 30fps, but for a game like this that is fine.
+
+In celebration I will reformat the indentation on all cpp and hpp files in the project. Visual Studio wants it a certain way which doesn't match what I was manually doing. It isn't worth fighting so we will go with Visual Studio's default indentation. Sorry that means I am checking in a new version of EVERYTHING. I should really start on part 11 now.
+
+The tutorial completely left unfinished the xp part (Rewarding Monster Kills). You need to update the load/save code of destructibles to load/save the xp, and then populate the xp when creating monsters/player. I said 10xp for Orcs, and 25xp for Trolls with 0xp start value for the player. Author must have been getting tired at this point.
+
+We need to recomputeFOV on next Level. I got a blank screen until I moved, maybe set it as mode startup. I seem to be leveling up slower than desired, maybe double xp points. XP(2) should really be Level 2 in the purple XP bar. If you choose to level up defense, Orcs can no longer hurt you -- not sporting. Frame alpha isn't working, may switch to regular. Scroll of Fireball range is too small, did it shrink? Troll attacks s, but it has no effect, is that string format broken? (Yes, fixed) Decided level up is overpowered so keep the xp points. Bumped fireball from 3 to 5. Since lightning bolt was also 5 bumped it up to 6. Making defense a random value between 0.1 and defense so little orcs still hurt when your defense is 2+. Call to nextLevel() new sets status to GameStatus::Startup. Also changed XP(%d) message to XP Level: %d. We aren't saving/loading fovOnly flag for actors. fixed. XP Level: %d is too long try XP: %d Lighten still looks bad just placing normally now TCOD_BKGND_SET. %.2g looks ugly adjust defense with roundf instead. Fireball is now too much decrement it. Adjusted defense prints but doesn't get used. Think I fixed it for non-spell damage. Reversing frame colors for level up menu and use lightGrey instead of lightYellow looks better. Fireball fixed, was supposed to pass the picker a 0.0f for range withing view. Now you don't always burn yourself.
+
+looks like print_frame is deprecated. Groan. Switched to what Inventory was using. Lets be honest, that is probably just as deprecated even if not marked as such. Other than that you can now go back to the main menu and start a new game or continue in emscripten. It simply doesn't destroy the current game if you don't leave the web page. If you restart the page, die, or have no experience points with a game status of startup it will assume you don't have a save game. Best I could do. Noticed I wasn't saving/loading xpLevel. Fixed.
+
+Ok, I think I will call this the last part of the tutorial. Scent tracking or more generic items I will save for 7drl. Same with joystick movement and movement consolidation. Mouse either works or it doesn't on Chromebook now. Before I finish and call this my starter code for 7drl, lets have some ideas for 7drl and maybe the future.
+
+7DRL:
+- A name
+- New menu picture.
+- More items, more monsters. Maybe populate them at certain dungeon level ranges and rates.
+- Status effects: Poison, Burn, Freeze, etc.
+- Sign Posts - hints, warnings, etc.
+- Throw items at enemies, maybe acts like monster using it or just damage (maybe post 7drl)
+- Intro level
+- Boss level(s) - premade levels every now and then really.
+- Call the game won at a certain level (final boss?).
+- Graphical tiles instead of/switchable between characters.
+- Speaking of graphical tiles some auto-mapping type things to make corners look better
+- Sound Effects (maybe music if I fee generous, and can find an online music generator like sfxr).
+- Joystick Support
+- Inventory should act like the Main menu/level up menu and let you scroll a selector up/down with enter/click/joystick button to select.
+- Larger levels with scrolling, in fact, make the levels get automatically larger as you decend.
+
+Seems like a lot I probably won't finish all of that in 7 days. If I did it might seem more like my game instead of a polished tutorial game.
+
+Post 7DRL:
+- Remove libTCOD -- I know its mean since that is what the tutorial was all about. But too many things are deprecated or broken, and it stops me from doing more interesting things. Feels like I am using SDL2 for half of the things already. 
+- Port to unconventional platforms like say a game console (Genesis/NES/Gameboy/Dreamcast/etc.)
+- Animated Sprites that move smoothly between tiles in at a frame rate independent speed.
+- Iosmetric or 3D view.
+- Better new C++ features like the std::shared_ptr and such I put in and ripped back out.
+- Items/Monsters that are defined in JSON instead of code.
+- Weapons (maybe 7drl)
+- Armor (maybe 7drl)
+- Try out other random level generators (Perlin noise, etc.).

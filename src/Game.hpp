@@ -3,10 +3,10 @@
 
 #include <list>
 
-#include "Scene.hpp"
 #include "Actor.hpp"
-#include "Map.hpp"
 #include "Gui.hpp"
+#include "Map.hpp"
+#include "Scene.hpp"
 
 namespace Game {
 
@@ -21,13 +21,15 @@ class Game : public Scene {
   void load();
   void save();
   void useInventory(Actor* owner, Actor* item);
-  void dropInventory(Actor* owner, Actor* item);        
+  void dropInventory(Actor* owner, Actor* item);
+  void nextLevel();
+  int get_level() { return level; };
 
   enum GameStatus { STARTUP, IDLE, NEW_TURN, VICTORY, DEFEAT } gameStatus;
 
-
   std::list<Actor*> actors;
   Actor* player;
+  Actor* stairs;
   Map* map;
   Gui* gui;
   int currentKey;
@@ -36,7 +38,8 @@ class Game : public Scene {
  protected:
   bool mouseClicked;
   int mouseX;  // mouse position in tiles/characters
-  int mouseY;        
+  int mouseY;
+  int level;
   bool initialized;
 };
 }  // namespace Game

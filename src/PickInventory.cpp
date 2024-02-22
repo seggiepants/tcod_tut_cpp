@@ -1,20 +1,20 @@
-#include <libtcod.hpp>
 #include "PickInventory.hpp"
+
+#include <libtcod.hpp>
+
+#include "Container.hpp"
 #include "Engine.hpp"
 #include "Game.hpp"
-#include "Container.hpp"
 
 Game::PickInventory::PickInventory() : owner(nullptr) {}
 
-void Game::PickInventory::init() {
-
-}
+void Game::PickInventory::init() {}
 
 void Game::PickInventory::destroy() { owner = nullptr; }
 
 Game::Scene* Game::PickInventory::update() {
   Game* game = (Game*)engine.scenes[GameScene::GAME];
-  
+
   SDL_Event event;
   SDL_Keycode currentKey;
 

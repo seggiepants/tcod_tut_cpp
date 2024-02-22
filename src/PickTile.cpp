@@ -1,5 +1,7 @@
-#include <SDL.h>
 #include "PickTile.hpp"
+
+#include <SDL.h>
+
 #include "Engine.hpp"
 #include "Game.hpp"
 
@@ -11,8 +13,7 @@ void Game::PickTile::init() {
   mouseY = game->player->y;  // going to add cursor keys as a fall-back.
 }
 
-void Game::PickTile::destroy() {
-}
+void Game::PickTile::destroy() {}
 
 Game::Scene* Game::PickTile::update() {
   Game* game = (Game*)engine.scenes[GameScene::GAME];
@@ -28,7 +29,7 @@ Game::Scene* Game::PickTile::update() {
     switch (event.type) {
       case SDL_QUIT:
         engine.Stop();
-        return engine.scenes[GameScene::EXIT];        
+        return engine.scenes[GameScene::EXIT];
         break;
       case SDL_KEYDOWN: {
         currentKey = event.key.keysym.sym;
@@ -39,7 +40,7 @@ Game::Scene* Game::PickTile::update() {
           case SDLK_RETURN:
           case SDLK_RETURN2:
           case SDLK_KP_ENTER:
-            engine.tilePicked(isPositionOK(mouseX, mouseY), mouseX, mouseY);            
+            engine.tilePicked(isPositionOK(mouseX, mouseY), mouseX, mouseY);
             break;
           case SDLK_KP_9:
             dy = -1;
@@ -119,5 +120,6 @@ void Game::PickTile::render() {
 
 bool Game::PickTile::isPositionOK(int x, int y) {
   Game* game = (Game*)engine.scenes[GameScene::GAME];
-  return game->map->isInFov(mouseX, mouseY) && (maxRange == 0.0f || game->player->getDistance(mouseX, mouseY) <= maxRange);
+  return game->map->isInFov(mouseX, mouseY) &&
+         (maxRange == 0.0f || game->player->getDistance(mouseX, mouseY) <= maxRange);
 }

@@ -9,7 +9,8 @@
 namespace Game {
 class Menu : public Scene {
  public:
-  enum MenuItemCode { NONE, NEW_GAME, CONTINUE, EXIT };
+  enum DisplayMode { MENU, LEVELUP};
+  enum MenuItemCode { NONE, NEW_GAME, CONTINUE, EXIT, CONSTITUTION, STRENGTH, AGILITY };
   Menu();
   ~Menu();
   void clear();
@@ -18,6 +19,7 @@ class Menu : public Scene {
   void destroy();
   Scene* update();
   void render();
+  DisplayMode mode;
 
  protected:
   struct MenuItem {
@@ -28,6 +30,8 @@ class Menu : public Scene {
   int selectedItem;
   int mouseX;
   int mouseY;
+  int menuX;
+  int menuY;
 
   Scene* processMenu(MenuItemCode selection);
 };

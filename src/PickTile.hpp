@@ -4,16 +4,16 @@
 #include "Scene.hpp"
 
 namespace Game {
-  class PickTile : public Scene {
+class PickTile : public Scene {
  public:
-    PickTile();
+  PickTile();
   void init();
   void destroy();
   Scene* update();
   void render();
   float maxRange;
 
-  protected:
+ protected:
   bool isPositionOK(int x, int y);
   bool mouseClicked;
   int mouseX;  // mouse position in tiles/characters
@@ -21,7 +21,7 @@ namespace Game {
   int currentKey;
   int x;
   int y;
-  };
-}
+};
+}  // namespace Game
 
 #endif

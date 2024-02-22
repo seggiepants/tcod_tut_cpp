@@ -24,7 +24,6 @@ void main_loop() {
     emscripten_cancel_main_loop();
   }
 #endif
-  
 }
 
 /// Main program entry point.
@@ -33,12 +32,11 @@ int main(int argc, char** argv) {
   Game::Game* game = (Game::Game*)engine.scenes[Game::GameScene::GAME];
   game->load();
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop(main_loop, 30, 1);
+  emscripten_set_main_loop(main_loop, 30, 1);
 #else
-    while (engine.isRunning()) 
-    {
-      main_loop();
-    }
+  while (engine.isRunning()) {
+    main_loop();
+  }
 #endif
   game->save();
   return 0;

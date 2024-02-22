@@ -1,12 +1,15 @@
-#include <iostream>
-#include <SDL.h>
 #include "Game.hpp"
+
+#include <SDL.h>
+
+#include <iostream>
+
+#include "Container.hpp"
 #include "Engine.hpp"
 #include "PlayerAi.hpp"
 #include "PlayerDestructible.hpp"
-#include "Container.hpp"
 
-Game::Game::Game() : gameStatus(STARTUP), fovRadius(10), currentKey((SDL_Keycode)0) {
+Game::Game::Game() : gameStatus(STARTUP), currentKey((SDL_Keycode)0), fovRadius(10), level(1) {
   player = nullptr;
   map = nullptr;
   gui = nullptr;
@@ -23,15 +26,21 @@ void Game::Game::init() {
   destroy();  // Make sure everything is clean
 
   player = new Actor(engine.get_console().get_width() / 2, engine.get_console().get_height() / 2, '@', "player", WHITE);
-  player->destructible = new PlayerDestructible(30, 2, "your cadaver");
+  player->destructible = new PlayerDestructible(30, 2, "your cadaver", 0);
   player->attacker = new Attacker(5);
   player->ai = new PlayerAi();
   player->container = new Container(26);
+
+  stairs = new Actor(0, 0, '>', "stairs", WHITE);
+  stairs->blocks = false;
+  stairs->fovOnly = false;
+
   if (!gui) gui = new Gui();
 
   map = new Map(engine.get_console().get_width(), engine.get_console().get_height() - gui->get_height());
   map->init(true);
-  actors.push_back(player);  // Make sure player is on-top.
+  actors.push_back(stairs); // Make sure stairs 2nd to top
+  actors.push_back(player); // with Player on top for Z-Ordering.
   gui->message(red, "Welcome stranger!\nPrepare to perish in the Tombs of the Ancient Kings.");
   gameStatus = GameStatus::STARTUP;
 }
@@ -58,7 +67,7 @@ Game::Scene* Game::Game::update() {
   SDL_Event event;
   currentKey = (SDL_Keycode)0;  // Clear each time  only new keys stay
   mouseClicked = false;  // Clear each time only want current status for the frame.
-  
+
   if (gameStatus == STARTUP) {
     // Compute FOV on first frame.
     map->computeFov();
@@ -78,16 +87,15 @@ Game::Scene* Game::Game::update() {
       case SDL_KEYDOWN:
         switch (event.key.keysym.sym) {
           case SDLK_ESCAPE:
-#ifndef __EMSCRIPTEN__
           {
             save();
             Scene* next = engine.scenes[GameScene::MENU];
+            ((Menu*)next)->mode = Menu::MENU;
             next->init();
             engine.currentScene = next;
             // engine.load();
           }
-#endif
-            break;
+          break;
           default:
             currentKey = event.key.keysym.sym;
             break;
@@ -124,17 +132,44 @@ void Game::Game::render() {
   engine.get_console().clear();
   map->render();
   for (auto const& actor : actors) {
-    if (map->isInFov(actor->x, actor->y)) {
+    if ((!actor->fovOnly && map->isExplored(actor->x, actor->y)) || (map->isInFov(actor->x, actor->y))) {
       actor->render();
     }
   }
   gui->render();
 }
 
+void Game::Game::nextLevel() {
+  int mapWidth, mapHeight;
+  level++;
+  gui->message(lightGrey, "You take a moment to rest, and recover your strength.");
+  player->destructible->heal(player->destructible->maxHp / 2);
+  gui->message(red, "After a rare moment of peace, you decend\ndeeper into the heart of the dungeon...");
+
+  mapWidth = map->width;
+  mapHeight = map->height;
+  delete map;
+  for (auto it = actors.begin(); it != actors.end(); it++) { // Will be doing deletion iterator sounds better than auto for loop for that.
+    if (*it != player && *it != stairs) {
+      delete *it;
+    }
+  }
+  actors.clear(); // I will just re-add stairs and player at the end of the repopulated actor list
+  map = new Map(mapWidth, mapHeight);
+  map->init(true);
+  actors.push_back(stairs);
+  actors.push_back(player);
+  gameStatus = GameStatus::STARTUP;
+}
+
 void Game::Game::load() {
   bool hasSaveFile = false;
 
-#ifndef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
+  hasSaveFile = !player->destructible->isDead() && (gameStatus != GameStatus::STARTUP || player->destructible->xp > 0);
+  gameStatus = GameStatus::STARTUP;
+  return;
+#else
   std::filesystem::path path(SAVE_FILENAME);
   if (std::filesystem::exists(path)) {
     hasSaveFile = true;
@@ -176,7 +211,8 @@ void Game::Game::load() {
     for (auto const& actor : actors) {
       if (actor->ch == (int)'@') {
         player = actor;
-        break;
+      } else if (actor->ch == (int)'>') {
+        stairs = actor;
       }
     }
 
@@ -188,7 +224,9 @@ void Game::Game::load() {
 }
 
 void Game::Game::save() {
-#ifndef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
+  return;
+#else
   const char delim = ',';
   if (!player) return;
   if (!player->destructible) return;

@@ -1,7 +1,11 @@
 #include "Menu.hpp"
+#include <libtcod.hpp>
 #include "Engine.hpp"
 
-Game::Menu::Menu() : selectedItem(0), mouseX(0), mouseY(0) {}
+const int FRAME_WIDTH = 30;
+const int FRAME_HEIGHT = 15;
+
+Game::Menu::Menu() : mode(DisplayMode::MENU), selectedItem(0), mouseX(0), mouseY(0), menuX(0), menuY(0) {}
 
 Game::Menu::~Menu() { destroy(); }
 
@@ -22,23 +26,33 @@ void Game::Menu::addItem(MenuItemCode code, const char* label) {
 void Game::Menu::init() {
   bool hasSaveFile = false;
 
-#ifndef __EMSCRIPTEN__
-  std::filesystem::path path(SAVE_FILENAME);
-  if (std::filesystem::exists(path)) {
-    hasSaveFile = true;
-  }
-#endif
   clear();
-  addItem(Menu::NEW_GAME, "New Game");
-  if (hasSaveFile) {
-    addItem(Menu::CONTINUE, "Continue");
+  if (mode == DisplayMode::MENU) {
+#ifdef __EMSCRIPTEN__
+    Game* game = ((Game*)engine.scenes[GameScene::GAME]);
+    hasSaveFile = (!game->player->destructible->isDead() && (game->gameStatus != Game::STARTUP || game->player->destructible->xp > 0));
+#else
+    std::filesystem::path path(SAVE_FILENAME);
+    if (std::filesystem::exists(path)) {
+      hasSaveFile = true;
+    }
+#endif
+    addItem(Menu::NEW_GAME, "New Game");
+    if (hasSaveFile) {
+      addItem(Menu::CONTINUE, "Continue");
+    }
+#ifndef __EMSCRIPTEN__
+    addItem(Menu::EXIT, "Exit");
+#endif
+  } else if (mode == DisplayMode::LEVELUP) {
+    addItem(Menu::CONSTITUTION, "Constitution (+20HP)");
+    addItem(Menu::STRENGTH, "Strength (+1 Attack)");
+    addItem(Menu::AGILITY, "Agility (+1 Defense)");
   }
-  addItem(Menu::EXIT, "Exit");
+  selectedItem = 0;
 }
 
-void Game::Menu::destroy() {
-  clear();
-}
+void Game::Menu::destroy() { clear(); }
 
 Game::Scene* Game::Menu::processMenu(MenuItemCode selection) {
   // enum MenuItemCode { NONE, NEW_GAME, CONTINUE, EXIT };
@@ -52,6 +66,20 @@ Game::Scene* Game::Menu::processMenu(MenuItemCode selection) {
   } else if (selection == Menu::CONTINUE) {
     Game* game = (Game*)engine.scenes[GameScene::GAME];
     game->load();
+    return game;
+  } else if (selection == Menu::CONSTITUTION) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+    game->player->destructible->maxHp += 20;
+    game->player->destructible->hp += 20;
+    return game;
+  } else if (selection == Menu::STRENGTH) {
+    Game* game = (Game*)engine.scenes[GameScene::GAME];
+    game->player->attacker->power++;    
+    return game;
+  } else if (selection == Menu::AGILITY) {
+
+  Game* game = (Game*)engine.scenes[GameScene::GAME];
+    game->player->destructible->defense++;
     return game;
   }
   return (Scene*)this;
@@ -73,7 +101,9 @@ Game::Scene* Game::Menu::update() {
         currentKey = event.key.keysym.sym;
         switch (currentKey) {
           case SDLK_ESCAPE:
-            return processMenu(MenuItemCode::EXIT);
+            if (mode == DisplayMode::MENU) {
+              return processMenu(MenuItemCode::EXIT);
+            }
             break;
           case SDLK_RETURN:
           case SDLK_RETURN2:
@@ -102,9 +132,8 @@ Game::Scene* Game::Menu::update() {
           case SDL_BUTTON_LEFT: {
             // Select and return on click.
             int index = 0;
-            printf("clicked on %d, %d", mouseX, mouseY);
             for (auto& item : items) {
-              if (mouseX >= 10 && mouseX <= 10 + (int)item->label.size() && mouseY == 10 + (3 * index)) {
+              if (mouseX >= menuX && mouseX <= menuX + (int)item->label.size() && mouseY == menuY + (3 * index)) {
                 return processMenu(item->code);
                 break;
               }
@@ -121,7 +150,7 @@ Game::Scene* Game::Menu::update() {
           mouseY = event.motion.y;
           int index = 0;
           for (auto& item : items) {
-            if (mouseX >= 10 && mouseX <= 10 + (int)item->label.size() && mouseY == 10 + (3 * index)) {
+            if (mouseX >= menuX && mouseX <= menuX + (int)item->label.size() && mouseY == menuY + (3 * index)) {
               selectedItem = index;
               break;
             }
@@ -139,12 +168,43 @@ void Game::Menu::render() {
   static std::string imgPath(imagePath.string());
   static TCODImage img(imgPath.c_str());
 
-  tcod::draw_quartergraphics(engine.get_console(), img, {0, 0}, {0, 0, -1, -1});
+
+  if (mode == DisplayMode::LEVELUP) {
+    int frameX = (engine.get_width() - FRAME_WIDTH) / 2;
+    int frameY = (engine.get_height() - FRAME_HEIGHT) / 2;
+
+    Game* game = ((Game*)engine.scenes[GameScene::GAME]);
+    game->render();
+
+    tcod::draw_rect(
+        engine.get_console(),
+        {frameX, frameY, FRAME_WIDTH, FRAME_HEIGHT},
+        (int)' ',
+        lightGrey,
+        black,
+        TCOD_BKGND_SET);
+    TCOD_console_printf_frame(
+        engine.get_console().get(),
+        frameX,
+        frameY,
+        FRAME_WIDTH,
+        FRAME_HEIGHT,
+        true,
+        TCOD_BKGND_DEFAULT,
+        "Level Up: Choose Reward");
+    menuX = frameX + 2;
+    menuY = frameY + 3;
+  } else if (mode == DisplayMode::MENU) {
+    tcod::draw_quartergraphics(engine.get_console(), img, {0, 0}, {0, 0, -1, -1});
+    menuX = 10;
+    menuY = engine.get_height() / 3;
+  }
+
   int currentItem = 0;
   for (auto& item : items) {
     tcod::print(
         engine.get_console(),
-        {10, 10 + (currentItem * 3)},
+        {menuX, menuY + (currentItem * 3)},
         item->label.c_str(),
         currentItem == selectedItem ? black : lightGrey,
         currentItem == selectedItem ? lighterOrange : black,
@@ -154,4 +214,3 @@ void Game::Menu::render() {
   }
   // ZZZ engine.flush();
 }
-

@@ -1,8 +1,8 @@
 #ifndef __PICKINVENTORY_HPP__
 #define __PICKINVENTORY_HPP__
 
-#include "Scene.hpp"
 #include "Actor.hpp"
+#include "Scene.hpp"
 
 namespace Game {
 class PickInventory : public Scene {
